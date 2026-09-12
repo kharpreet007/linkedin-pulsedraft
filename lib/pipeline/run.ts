@@ -1,0 +1,77 @@
+import { prisma } from "@/lib/db";
+import { runScout } from "./scout";
+import { runRemy } from "./remy";
+import { runVal } from "./val";
+
+export interface DailyRunResult {
+  date: string;
+  created: boolean;
+}
+
+/**
+ * Runs Scout -> Remy -> Val for `date` and persists the result. Idempotent: if a Run already
+ * exists for that date with candidates, it's left alone unless `force` is set. `force` deletes
+ * the existing Run first, which cascades away any PostedSelection/Engagement already recorded
+ * for that date — only pass it for an intentional manual redo.
+ */
+export async function runDailyPipeline(
+  date: string,
+  { force = false }: { force?: boolean } = {}
+): Promise<DailyRunResult> {
+  const existing = await prisma.run.findUnique({
+    where: { date },
+    include: { candidates: true },
+  });
+  if (existing && existing.candidates.length > 0 && !force) {
+    return { date, created: false };
+  }
+
+  const topics = await runScout();
+  const drafts = await Promise.all(topics.map((t) => runRemy(t.topic)));
+
+  const scoreInputs = topics.map((t, index) => ({ index, topic: t.topic, draft: drafts[index] }));
+  const scores = await runVal(scoreInputs);
+  const scoreByIndex = new Map(scores.map((s) => [s.index, s]));
+
+  const ranked = topics
+    .map((t, index) => {
+      const score = scoreByIndex.get(index);
+      if (!score) {
+        throw new Error(`Val did not return a score for candidate index ${index}`);
+      }
+      const total = score.hook + score.insight + score.authenticity + score.engagement + score.clarity;
+      return { topic: t.topic, theme: t.theme, draft: drafts[index], score, total };
+    })
+    .sort((a, b) => b.total - a.total)
+    .map((c, i) => ({ ...c, rank: i + 1 }));
+
+  await prisma.$transaction(async (tx) => {
+    if (existing) {
+      await tx.run.delete({ where: { id: existing.id } });
+    }
+    const run = await tx.run.create({ data: { date } });
+    for (const c of ranked) {
+      await tx.candidate.create({
+        data: {
+          runId: run.id,
+          topic: c.topic,
+          theme: c.theme,
+          draft: c.draft,
+          rank: c.rank,
+          score: {
+            create: {
+              hook: c.score.hook,
+              insight: c.score.insight,
+              authenticity: c.score.authenticity,
+              engagement: c.score.engagement,
+              clarity: c.score.clarity,
+              total: c.total,
+            },
+          },
+        },
+      });
+    }
+  });
+
+  return { date, created: true };
+}
