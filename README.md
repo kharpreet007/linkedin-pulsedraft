@@ -1,4 +1,4 @@
-# LinkedIn PulseCraft — Draft Desk
+# LinkedIn PostAi — Draft Desk
 
 A daily content pipeline for LinkedIn posts. Once a day, three AI stages run automatically:
 
@@ -33,8 +33,10 @@ npm run dev                 # http://localhost:3000
 ```
 
 `DATABASE_URL` needs a real Postgres instance — [Neon](https://neon.tech),
-[Vercel Postgres](https://vercel.com/storage/postgres), or Supabase all work; a local `postgres`
-works for development too.
+[Vercel Postgres](https://vercel.com/storage/postgres), [Railway](https://railway.app), or Supabase
+all work; a local `postgres` works for development too. If your DB is on Railway, make sure public
+networking / the TCP proxy is enabled on that Postgres service — otherwise anything outside
+Railway's network (Vercel included) can't reach it.
 
 `ANTHROPIC_API_KEY` needs web search enabled on the account for Scout to work (Remy/Val work with
 any key). Get one at https://console.anthropic.com.
@@ -57,9 +59,11 @@ yet.
 
 1. Push this repo to GitHub and import it in Vercel.
 2. Set `DATABASE_URL`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` (optional), `CRON_SECRET`, and
-   `PULSECRAFT_TIMEZONE` as project env vars.
-3. Run `npx prisma migrate deploy` against the production `DATABASE_URL` (or let your Postgres
-   provider's migration step do it) before the first deploy.
+   `PULSECRAFT_TIMEZONE` as project env vars (scope them to whichever environments you deploy —
+   Production and/or Preview).
+3. Migrations run automatically — `npm run build` is `prisma migrate deploy && next build`, so
+   every Vercel deploy applies any pending schema migrations against `DATABASE_URL` for you. No
+   separate migration step needed.
 4. `vercel.json` already defines a cron hitting `/api/daily-run` at `0 13 * * *` (13:00 UTC ≈
    9am US Eastern, DST-dependent — adjust the cron expression and/or `PULSECRAFT_TIMEZONE` for
    your actual timezone). Vercel signs cron requests with `Authorization: Bearer $CRON_SECRET`
