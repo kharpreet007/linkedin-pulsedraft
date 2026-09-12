@@ -62,14 +62,16 @@ export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; tod
   return (
     <>
       <div>
-        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: 22 }}>Analytics</div>
+        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 24, letterSpacing: "-0.01em" }}>Analytics</div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: "var(--space-3)", marginTop: "var(--space-4)" }}>
         {kpis.map((k) => (
           <div className="card" key={k.label}>
             <div className="card-meta">{k.label}</div>
-            <div style={{ fontSize: 26, fontWeight: 500, marginTop: 4 }}>{k.value}</div>
+            <div style={{ fontFamily: "var(--font-heading)", fontSize: 28, fontWeight: 700, marginTop: 6, letterSpacing: "-0.02em" }}>
+              {k.value}
+            </div>
           </div>
         ))}
       </div>

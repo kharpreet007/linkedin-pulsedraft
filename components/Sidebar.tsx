@@ -2,6 +2,48 @@
 
 import type { View } from "@/lib/types";
 
+const ICONS: Record<View, JSX.Element> = {
+  dashboard: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <rect x="1.5" y="1.5" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+      <rect x="8.5" y="1.5" width="6" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+      <rect x="1.5" y="9.5" width="6" height="5" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  ),
+  calendar: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <rect x="1.5" y="2.5" width="13" height="12" rx="2" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M1.5 6h13" stroke="currentColor" strokeWidth="1.4" />
+      <path d="M4.5 1v3M11.5 1v3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    </svg>
+  ),
+  day: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <rect x="1.5" y="2.5" width="13" height="12" rx="2" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  ),
+  generator: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path
+        d="M8 1.5l1.1 2.9 2.9 1.1-2.9 1.1L8 9.5l-1.1-2.9-2.9-1.1 2.9-1.1L8 1.5z"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinejoin="round"
+      />
+      <path d="M12.5 9.5l.6 1.5 1.5.6-1.5.6-.6 1.5-.6-1.5-1.5-.6 1.5-.6.6-1.5z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round" />
+    </svg>
+  ),
+  analytics: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M2 14V2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <path d="M2 14h12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+      <rect x="4.5" y="8" width="2" height="4" rx="0.6" fill="currentColor" />
+      <rect x="8" y="5" width="2" height="7" rx="0.6" fill="currentColor" />
+      <rect x="11.5" y="9.5" width="2" height="2.5" rx="0.6" fill="currentColor" />
+    </svg>
+  ),
+};
+
 const NAV_ITEMS: { view: View; label: string }[] = [
   { view: "dashboard", label: "Dashboard" },
   { view: "calendar", label: "Calendar" },
@@ -19,23 +61,41 @@ export default function Sidebar({
   return (
     <aside
       style={{
-        width: 240,
+        width: 248,
         flexShrink: 0,
-        borderRight: "1px solid var(--color-neutral-700)",
-        padding: "var(--space-4)",
+        borderRight: "1px solid var(--color-neutral-800)",
+        padding: "var(--space-5) var(--space-4)",
         overflowY: "auto",
         display: "flex",
         flexDirection: "column",
-        gap: "var(--space-4)",
+        gap: "var(--space-5)",
       }}
     >
-      <div>
-        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: 17, letterSpacing: "-0.01em" }}>
-          LinkedIn PulseCraft
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <div
+          style={{
+            width: 34,
+            height: 34,
+            borderRadius: 10,
+            background: "var(--gradient-brand)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 4px 14px rgba(139, 92, 246, 0.4)",
+            flexShrink: 0,
+          }}
+        >
+          <span style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 16, color: "#fff" }}>P</span>
         </div>
-        <div style={{ fontSize: 12, color: "var(--color-neutral-300)", marginTop: 2 }}>Draft Desk</div>
+        <div>
+          <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 16, letterSpacing: "-0.01em", lineHeight: 1.2 }}>
+            LinkedIn PostAi
+          </div>
+          <div style={{ fontSize: 11, color: "var(--color-neutral-400)", marginTop: 1 }}>Draft Desk</div>
+        </div>
       </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 3, marginLeft: 2 }}>
         {NAV_ITEMS.map((item) => {
           const isActive = item.view === activeView || (item.view === "calendar" && activeView === "day");
           return (
@@ -44,6 +104,7 @@ export default function Sidebar({
               className={`nav-btn${isActive ? " active" : ""}`}
               onClick={() => onSelect(item.view)}
             >
+              {ICONS[item.view]}
               {item.label}
             </button>
           );

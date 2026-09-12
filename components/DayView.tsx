@@ -54,7 +54,7 @@ export default function DayView({
 
   const handleEmail = (candidate: Candidate) => {
     const subject = encodeURIComponent("Val's Pick — " + candidate.topic);
-    const body = encodeURIComponent(candidate.draft + "\n\n—\nSent from PulseCraft Draft Desk");
+    const body = encodeURIComponent(candidate.draft + "\n\n—\nSent from LinkedIn PostAi Draft Desk");
     window.location.href = `mailto:${VAL_PICK_EMAIL}?subject=${subject}&body=${body}`;
   };
 
@@ -75,7 +75,7 @@ export default function DayView({
         >
           ← Back to Calendar
         </button>
-        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: 22 }}>{fmtHeader(run.date, today)}</div>
+        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 24, letterSpacing: "-0.01em" }}>{fmtHeader(run.date, today)}</div>
         <div style={{ fontSize: 13, color: "var(--color-neutral-300)", marginTop: 4 }}>
           5 candidates from Scout · drafted by Remy · scored &amp; ranked by Val
         </div>
@@ -99,8 +99,11 @@ export default function DayView({
               key={c.id}
               className="card"
               style={{
-                border: isTopPick ? "1px solid var(--color-accent-600)" : "1px solid var(--color-neutral-700)",
-                boxShadow: isTopPick ? "var(--shadow-md)" : "none",
+                border: isTopPick ? "1px solid rgba(167, 139, 250, 0.5)" : "1px solid var(--color-neutral-700)",
+                background: isTopPick
+                  ? "linear-gradient(180deg, rgba(139, 92, 246, 0.08), rgba(255,255,255,0)), var(--color-bg-elevated)"
+                  : undefined,
+                boxShadow: isTopPick ? "var(--shadow-glow)" : "none",
                 display: "flex",
                 flexDirection: "column",
               }}
@@ -154,10 +157,13 @@ export default function DayView({
                     ] as const
                   ).map(([label, value]) => (
                     <div key={label}>
-                      <div style={{ fontSize: 10, color: "var(--color-neutral-400)", textTransform: "uppercase", letterSpacing: "0.03em" }}>
+                      <div style={{ fontSize: 10, color: "var(--color-neutral-500)", textTransform: "uppercase", letterSpacing: "0.04em", fontWeight: 600 }}>
                         {label}
                       </div>
-                      <div style={{ fontSize: 14, fontWeight: 500, color: "var(--color-text)", marginTop: 2 }}>{value}</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text)", marginTop: 2 }}>{value}</div>
+                      <div className="score-bar-track">
+                        <div className="score-bar-fill" style={{ width: `${(value / 10) * 100}%` }} />
+                      </div>
                     </div>
                   ))}
               </div>

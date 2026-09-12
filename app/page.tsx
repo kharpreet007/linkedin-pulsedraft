@@ -108,7 +108,7 @@ export default function Home() {
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: "var(--color-bg)", color: "var(--color-text)", fontFamily: "var(--font-body)" }}>
+    <div style={{ display: "flex", height: "100vh", color: "var(--color-text)", fontFamily: "var(--font-body)" }}>
       <Sidebar
         activeView={view}
         onSelect={(v) => {
@@ -153,7 +153,9 @@ export default function Home() {
                 onEditEngagement={handleEditEngagement}
               />
             )}
-            {view === "calendar" && <CalendarView runs={runs} today={today} onSelectDate={selectDate} />}
+            {view === "calendar" && (
+              <CalendarView runs={runs} today={today} selectedDate={selectedDate} onSelectDate={selectDate} />
+            )}
             {view === "day" &&
               (loadingDetail || !runDetail ? (
                 <div style={{ fontSize: 13, color: "var(--color-neutral-400)" }}>Loading…</div>

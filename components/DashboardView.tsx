@@ -22,7 +22,7 @@ export default function DashboardView({
   return (
     <>
       <div>
-        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 500, fontSize: 22 }}>Dashboard</div>
+        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 24, letterSpacing: "-0.01em" }}>Dashboard</div>
         <div style={{ fontSize: 13, color: "var(--color-neutral-300)", marginTop: 4 }}>
           Every post published so far, with its live engagement
         </div>
