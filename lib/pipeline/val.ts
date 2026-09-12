@@ -1,4 +1,4 @@
-import { getAnthropicClient, ANTHROPIC_MODEL, extractJson } from "@/lib/anthropic";
+import { getGeminiClient, GEMINI_MODEL, extractJson } from "@/lib/gemini";
 
 export interface ValCandidateInput {
   index: number;
@@ -16,7 +16,7 @@ export interface ValScore {
 }
 
 export async function runVal(candidates: ValCandidateInput[]): Promise<ValScore[]> {
-  const client = getAnthropicClient();
+  const ai = getGeminiClient();
 
   const prompt = `You are Val, a rigorous editor scoring LinkedIn post drafts before publication.
 Score each of the following ${candidates.length} drafts on five dimensions, 0-10 each (integers only):
@@ -29,22 +29,25 @@ ${candidates
   .map((c) => `--- Draft ${c.index} ---\nTopic: ${c.topic}\n${c.draft}`)
   .join("\n\n")}
 
-Return ONLY a JSON array with exactly ${candidates.length} objects, nothing else — no preamble, no markdown
-fence. One object per draft, in this shape:
+Return a JSON array with exactly ${candidates.length} objects, one per draft, in this shape:
 [{"index": number, "hook": number, "insight": number, "authenticity": number, "engagement": number, "clarity": number}, ...]`;
 
-  const response = await client.messages.create({
-    model: ANTHROPIC_MODEL,
-    max_tokens: 2048,
-    messages: [{ role: "user", content: prompt }],
+  const response = await ai.models.generateContent({
+    model: GEMINI_MODEL,
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+    },
   });
 
-  const text = response.content
-    .filter((block): block is { type: "text"; text: string } => block.type === "text")
-    .map((block) => block.text)
-    .join("\n");
+  const text = response.text ?? "";
+  let scores: ValScore[];
+  try {
+    scores = JSON.parse(text) as ValScore[];
+  } catch {
+    scores = extractJson<ValScore[]>(text);
+  }
 
-  const scores = extractJson<ValScore[]>(text);
   if (!Array.isArray(scores) || scores.length !== candidates.length) {
     throw new Error(
       `Val returned ${Array.isArray(scores) ? scores.length : "a non-array"} scores, expected ${candidates.length}`

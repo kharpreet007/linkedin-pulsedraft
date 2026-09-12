@@ -1,22 +1,26 @@
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI } from "@google/genai";
 
-let client: Anthropic | null = null;
+let client: GoogleGenAI | null = null;
 
-export function getAnthropicClient(): Anthropic {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    throw new Error("ANTHROPIC_API_KEY is not set");
+export function getGeminiClient(): GoogleGenAI {
+  if (!process.env.GEMINI_API_KEY) {
+    throw new Error("GEMINI_API_KEY is not set");
   }
   if (!client) {
-    client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
   }
   return client;
 }
 
-export const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-5";
+// Gemini model names rotate fairly often — override via env if this default 404s.
+// Current list: https://ai.google.dev/gemini-api/docs/models
+export const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 
 /**
  * Pulls the last balanced {...} or [...] JSON value out of a model response.
- * Models asked for "JSON only" still sometimes wrap it in prose or a code fence.
+ * Models asked for "JSON only" still sometimes wrap it in prose or a code fence —
+ * this matters especially for Scout, which can't use strict JSON mode because it
+ * also uses the googleSearch tool (the two aren't combinable in one request).
  */
 export function extractJson<T = unknown>(text: string): T {
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);

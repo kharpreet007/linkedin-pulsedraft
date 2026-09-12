@@ -2,8 +2,8 @@
 
 A daily content pipeline for LinkedIn posts. Once a day, three AI stages run automatically:
 
-1. **Scout** — searches Reddit/Google/Quora (via Claude's web search tool) for trending PM / AI /
-   workplace-psychology discussions and picks 5 candidate topics.
+1. **Scout** — searches Reddit/Google/Quora (via Gemini's Google Search grounding tool) for trending
+   PM / AI / workplace-psychology discussions and picks 5 candidate topics.
 2. **Remy** — expands each topic into a full storyteller-style draft (150–200 words, line-by-line,
    no hashtags/emojis, ends on an open question).
 3. **Val** — scores each draft 0–10 on Hook / Insight / Authenticity / Engagement / Clarity (50
@@ -19,15 +19,14 @@ LinkedIn API integration for pulling live metrics, by design.
 
 - **Next.js 14** (App Router, TypeScript) — UI + API routes
 - **Prisma + Postgres** — persistence (`Run`, `Candidate`, `Score`, `PostedSelection`, `Engagement`)
-- **Anthropic API** (`@anthropic-ai/sdk`) — Scout/Remy/Val, Scout using the `web_search_20250305`
-  server-side tool for grounding
+- **Gemini API** (`@google/genai`) — Scout/Remy/Val, Scout using the `googleSearch` grounding tool
 - **Vercel Cron** (`vercel.json`) — triggers the daily run
 
 ## Local setup
 
 ```bash
 npm install
-cp .env.example .env        # fill in DATABASE_URL, ANTHROPIC_API_KEY, CRON_SECRET
+cp .env.example .env        # fill in DATABASE_URL, GEMINI_API_KEY, CRON_SECRET
 npx prisma migrate dev      # creates the schema against DATABASE_URL
 npm run dev                 # http://localhost:3000
 ```
@@ -38,8 +37,11 @@ all work; a local `postgres` works for development too. If your DB is on Railway
 networking / the TCP proxy is enabled on that Postgres service — otherwise anything outside
 Railway's network (Vercel included) can't reach it.
 
-`ANTHROPIC_API_KEY` needs web search enabled on the account for Scout to work (Remy/Val work with
-any key). Get one at https://console.anthropic.com.
+`GEMINI_API_KEY` — get one at https://aistudio.google.com/apikey. Scout's Google Search grounding
+calls incur their own per-request cost beyond plain generation once you're past the free tier — see
+https://ai.google.dev/gemini-api/docs/pricing. Gemini model names rotate fairly often; if
+`GEMINI_MODEL`'s default (`gemini-2.5-flash`) 404s, check
+https://ai.google.dev/gemini-api/docs/models for the current list.
 
 ## Running the pipeline manually
 
@@ -58,7 +60,7 @@ yet.
 ## Deploying (Vercel)
 
 1. Push this repo to GitHub and import it in Vercel.
-2. Set `DATABASE_URL`, `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` (optional), `CRON_SECRET`, and
+2. Set `DATABASE_URL`, `GEMINI_API_KEY`, `GEMINI_MODEL` (optional), `CRON_SECRET`, and
    `PULSECRAFT_TIMEZONE` as project env vars (scope them to whichever environments you deploy —
    Production and/or Preview).
 3. Migrations run automatically — `npm run build` is `prisma migrate deploy && next build`, so

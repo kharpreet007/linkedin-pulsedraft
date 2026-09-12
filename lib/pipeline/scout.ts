@@ -1,4 +1,4 @@
-import { getAnthropicClient, ANTHROPIC_MODEL, extractJson } from "@/lib/anthropic";
+import { getGeminiClient, GEMINI_MODEL, extractJson } from "@/lib/gemini";
 import type { Theme } from "@prisma/client";
 
 export interface ScoutTopic {
@@ -21,28 +21,20 @@ Return ONLY a JSON array of exactly 5 objects, nothing else — no preamble, no 
 [{"topic": "<a specific, punchy topic phrased as a post idea>", "theme": "PM" | "AI" | "Psychology"}, ...]`;
 
 export async function runScout(): Promise<ScoutTopic[]> {
-  const client = getAnthropicClient();
+  const ai = getGeminiClient();
 
-  const response = await client.messages.create({
-    model: ANTHROPIC_MODEL,
-    max_tokens: 4096,
-    system: SYSTEM_PROMPT,
-    tools: [
-      {
-        type: "web_search_20250305",
-        name: "web_search",
-        max_uses: 8,
-      },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ] as any,
-    messages: [{ role: "user", content: USER_PROMPT }],
+  // Google Search grounding and forced JSON output can't be combined in one request,
+  // so the JSON-only instruction lives in the prompt and gets parsed out below instead.
+  const response = await ai.models.generateContent({
+    model: GEMINI_MODEL,
+    contents: USER_PROMPT,
+    config: {
+      systemInstruction: SYSTEM_PROMPT,
+      tools: [{ googleSearch: {} }],
+    },
   });
 
-  const text = response.content
-    .filter((block): block is { type: "text"; text: string } => block.type === "text")
-    .map((block) => block.text)
-    .join("\n");
-
+  const text = response.text ?? "";
   const topics = extractJson<ScoutTopic[]>(text);
   if (!Array.isArray(topics) || topics.length !== 5) {
     throw new Error(

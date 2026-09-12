@@ -1,4 +1,4 @@
-import { getAnthropicClient, ANTHROPIC_MODEL } from "@/lib/anthropic";
+import { getGeminiClient, GEMINI_MODEL } from "@/lib/gemini";
 
 /** Same style rules as the original Post Generator prompt — kept in one place so the daily
  *  pipeline and the ad-hoc /api/generate endpoint never drift apart. */
@@ -16,20 +16,14 @@ export function buildRemyPrompt(topic: string): string {
 }
 
 export async function runRemy(topic: string): Promise<string> {
-  const client = getAnthropicClient();
+  const ai = getGeminiClient();
 
-  const response = await client.messages.create({
-    model: ANTHROPIC_MODEL,
-    max_tokens: 1024,
-    messages: [{ role: "user", content: buildRemyPrompt(topic) }],
+  const response = await ai.models.generateContent({
+    model: GEMINI_MODEL,
+    contents: buildRemyPrompt(topic),
   });
 
-  const text = response.content
-    .filter((block): block is { type: "text"; text: string } => block.type === "text")
-    .map((block) => block.text)
-    .join("\n")
-    .trim();
-
+  const text = (response.text ?? "").trim();
   if (!text) {
     throw new Error(`Remy returned no draft for topic: ${topic}`);
   }
