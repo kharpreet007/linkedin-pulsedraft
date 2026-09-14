@@ -93,7 +93,7 @@ export default function DayView({
         {candidates.map((c) => {
           const isPosted = postedId === c.id;
           const isCopied = copiedId === c.id;
-          const isTopPick = c.rank === 1;
+          const isTopPick = c.rank === 1 || c.rank === 2;
           return (
             <div
               key={c.id}
@@ -111,7 +111,7 @@ export default function DayView({
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "var(--space-2)", marginBottom: "var(--space-2)" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
                   <span className={isTopPick ? "tag tag-accent" : "tag tag-neutral"}>
-                    {isTopPick ? "Val's Pick" : `#${c.rank}`}
+                    {isTopPick ? `Val's Pick #${c.rank}` : `#${c.rank}`}
                   </span>
                   <span className="tag tag-neutral">{c.theme}</span>
                 </div>
