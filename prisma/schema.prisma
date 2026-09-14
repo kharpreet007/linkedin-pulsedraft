@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Theme {
+  PM
+  AI
+  Psychology
+}
+
+/// One calendar day's pipeline output: Scout's 5 topics, Remy's drafts, Val's scores.
+model Run {
+  id        String   @id @default(cuid())
+  date      String   @unique // YYYY-MM-DD, in PULSECRAFT_TIMEZONE
+  createdAt DateTime @default(now())
+
+  candidates      Candidate[]
+  postedSelection PostedSelection?
+  engagement      Engagement?
+}
+
+/// One of the day's 5 Scout topics, expanded by Remy into a full draft.
+model Candidate {
+  id      String  @id @default(cuid())
+  runId   String
+  run     Run     @relation(fields: [runId], references: [id], onDelete: Cascade)
+  topic   String
+  theme   Theme
+  draft   String  @db.Text
+  rank    Int? // 1-5, set once Val has scored & ranked all candidates for the run
+
+  score           Score?
+  postedSelection PostedSelection?
+
+  @@index([runId])
+}
+
+/// Val's five-dimension score (0-10 each, 50 total) for one candidate.
+model Score {
+  id           String    @id @default(cuid())
+  candidateId  String    @unique
+  candidate    Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  hook         Int
+  insight      Int
+  authenticity Int
+  engagement   Int
+  clarity      Int
+  total        Int
+}
+
+/// Which candidate was actually published for a given Run, plus any manual
+/// topic/theme edits made after the fact (kept separate from the AI-generated
+/// candidate fields so the original Scout/Remy/Val output is never overwritten).
+model PostedSelection {
+  id            String    @id @default(cuid())
+  runId         String    @unique
+  run           Run       @relation(fields: [runId], references: [id], onDelete: Cascade)
+  candidateId   String    @unique
+  candidate     Candidate @relation(fields: [candidateId], references: [id])
+  topicOverride String?
+  themeOverride Theme?
+  postedAt      DateTime  @default(now())
+}
+
+/// Manually-entered LinkedIn metrics for a Run's published post (no LinkedIn API integration).
+model Engagement {
+  id          String   @id @default(cuid())
+  runId       String   @unique
+  run         Run      @relation(fields: [runId], references: [id], onDelete: Cascade)
+  impressions Int      @default(0)
+  likes       Int      @default(0)
+  comments    Int      @default(0)
+  updatedAt   DateTime @updatedAt
+}
