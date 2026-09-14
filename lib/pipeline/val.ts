@@ -1,3 +1,4 @@
+import { Type } from "@google/genai";
 import { getGeminiClient, GEMINI_MODEL, extractJson } from "@/lib/gemini";
 
 export interface ValCandidateInput {
@@ -37,6 +38,21 @@ Return a JSON array with exactly ${candidates.length} objects, one per draft, in
     contents: prompt,
     config: {
       responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            index: { type: Type.INTEGER },
+            hook: { type: Type.INTEGER },
+            insight: { type: Type.INTEGER },
+            authenticity: { type: Type.INTEGER },
+            engagement: { type: Type.INTEGER },
+            clarity: { type: Type.INTEGER },
+          },
+          required: ["index", "hook", "insight", "authenticity", "engagement", "clarity"],
+        },
+      },
     },
   });
 
