@@ -57,15 +57,31 @@ already has candidates — **this deletes that date's Run**, including any poste
 manually-entered engagement, so only use it for an intentional redo of a day nobody has acted on
 yet.
 
+## Migrations: build vs. start
+
+`npm run build` (`next build`) does **not** run `prisma migrate deploy` — on Railway (and similar
+platforms that build in an isolated builder with no access to private networking), a migration
+during build can't reach a Postgres service that's only reachable via its internal
+`*.railway.internal` hostname, and the build fails with `P1001`. Instead `npm start`
+(`prisma migrate deploy && next start`) applies migrations right before the server boots, when
+private networking is available. Deploying to Railway, Render, Fly.io, or any platform that runs a
+persistent Node process via `npm start` needs no extra configuration — migrations just happen automatically each start.
+
+Vercel's standard Next.js deployment is serverless and **never invokes `npm start`**, so that path
+doesn't apply there. Use `npm run build:vercel` (`prisma migrate deploy && next build`) as the
+Vercel project's **Build Command** override instead — Vercel's build step runs somewhere that can
+reach a publicly-routable `DATABASE_URL`, so migrating at build time works fine there.
+
 ## Deploying (Vercel)
 
 1. Push this repo to GitHub and import it in Vercel.
 2. Set `DATABASE_URL`, `GEMINI_API_KEY`, `GEMINI_MODEL` (optional), `CRON_SECRET`, and
    `PULSECRAFT_TIMEZONE` as project env vars (scope them to whichever environments you deploy —
    Production and/or Preview).
-3. Migrations run automatically — `npm run build` is `prisma migrate deploy && next build`, so
-   every Vercel deploy applies any pending schema migrations against `DATABASE_URL` for you. No
-   separate migration step needed.
+3. In Project Settings → Build & Development Settings, override the **Build Command** to
+   `npm run build:vercel` so every deploy applies pending schema migrations against `DATABASE_URL`
+   before building (see "Migrations: build vs. start" above — plain `next build` skips migrations
+   entirely).
 4. `vercel.json` already defines a cron hitting `/api/daily-run` at `0 13 * * *` (13:00 UTC ≈
    9am US Eastern, DST-dependent — adjust the cron expression and/or `PULSECRAFT_TIMEZONE` for
    your actual timezone). Vercel signs cron requests with `Authorization: Bearer $CRON_SECRET`
@@ -77,6 +93,21 @@ yet.
    cap at 10s executed, which will *not* be enough — either upgrade to Pro or move the pipeline to
    an external scheduler with a longer timeout, e.g. a GitHub Actions scheduled workflow calling
    the same endpoint, or Trigger.dev/Inngest).
+
+## Deploying (Railway)
+
+1. Push this repo to GitHub and create a Railway service from it, in the same project as a
+   Postgres plugin (**+ New → Database → PostgreSQL** if you don't have one yet).
+2. In the service's **Variables** tab, set `DATABASE_URL=${{ Postgres.DATABASE_URL }}` (reference
+   the Postgres plugin rather than pasting a static string, so it stays correct if Railway ever
+   rotates it — check the Postgres plugin's own Variables tab for its exact reference name if
+   you've renamed it), plus `GEMINI_API_KEY`, `GEMINI_MODEL`, `CRON_SECRET`, and
+   `PULSECRAFT_TIMEZONE`.
+3. No Build Command override needed — Railway runs `npm run build` then `npm start`, and `npm
+   start` is what applies migrations here (see "Migrations: build vs. start" above).
+4. Railway has no built-in cron for a web service; trigger `/api/daily-run` daily with Railway's
+   own Cron Jobs feature, or an external scheduler (GitHub Actions, cron-job.org, etc.) hitting
+   your deployed URL with the `Authorization: Bearer $CRON_SECRET` header.
 
 ## API surface
 
