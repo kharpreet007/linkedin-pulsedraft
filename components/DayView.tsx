@@ -54,7 +54,7 @@ export default function DayView({
 
   const handleEmail = (candidate: Candidate) => {
     const subject = encodeURIComponent("Val's Pick — " + candidate.topic);
-    const body = encodeURIComponent(candidate.draft + "\n\n—\nSent from LinkedIn PostAi Draft Desk");
+    const body = encodeURIComponent(candidate.draft + "\n\n—\nSent from LinkedIn Pulsedraft Draft Desk");
     window.location.href = `mailto:${VAL_PICK_EMAIL}?subject=${subject}&body=${body}`;
   };
 

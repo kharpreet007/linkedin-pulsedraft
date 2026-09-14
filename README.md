@@ -1,4 +1,4 @@
-# LinkedIn PostAi — Draft Desk
+# LinkedIn Pulsedraft — Draft Desk
 
 A daily content pipeline for LinkedIn posts. Once a day, three AI stages run automatically:
 

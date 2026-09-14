@@ -89,7 +89,7 @@ export default function Sidebar({
         </div>
         <div>
           <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 16, letterSpacing: "-0.01em", lineHeight: 1.2 }}>
-            LinkedIn PostAi
+            LinkedIn Pulsedraft
           </div>
           <div style={{ fontSize: 11, color: "var(--color-neutral-400)", marginTop: 1 }}>Draft Desk</div>
         </div>

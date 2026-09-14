@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-body" });
 const sora = Sora({ subsets: ["latin"], weight: ["500", "600", "700"], variable: "--font-heading-family" });
 
 export const metadata: Metadata = {
-  title: "LinkedIn PostAi — Draft Desk",
+  title: "LinkedIn Pulsedraft — Draft Desk",
   description: "Daily Scout → Remy → Val content pipeline for LinkedIn posts.",
 };
 
