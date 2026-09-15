@@ -27,7 +27,12 @@ export async function runDailyPipeline(
   }
 
   const topics = await runScout();
-  const drafts = await Promise.all(topics.map((t) => runRemy(t.topic)));
+  // Sequential, not Promise.all: firing all 5 Remy calls at once spikes requests-per-minute
+  // enough to trip Gemini's rate limit on lower-tier API keys.
+  const drafts: string[] = [];
+  for (const t of topics) {
+    drafts.push(await runRemy(t.topic));
+  }
 
   const scoreInputs = topics.map((t, index) => ({ index, topic: t.topic, draft: drafts[index] }));
   const scores = await runVal(scoreInputs);
