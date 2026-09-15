@@ -12,7 +12,8 @@ const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 interface Cell {
   key: string;
   day: number | "";
-  disabled: boolean;
+  isPad: boolean;
+  hasRun: boolean;
   posted: boolean;
   isToday: boolean;
   isSelected: boolean;
@@ -42,7 +43,7 @@ export default function CalendarView({
     const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
     const result: Cell[] = [];
     for (let i = 0; i < startOffset; i++) {
-      result.push({ key: `pad-${i}`, day: "", disabled: true, posted: false, isToday: false, isSelected: false, dateStr: null });
+      result.push({ key: `pad-${i}`, day: "", isPad: true, hasRun: false, posted: false, isToday: false, isSelected: false, dateStr: null });
     }
     for (let d = 1; d <= daysInMonth; d++) {
       const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
@@ -50,7 +51,8 @@ export default function CalendarView({
       result.push({
         key: dateStr,
         day: d,
-        disabled: !run,
+        isPad: false,
+        hasRun: !!run,
         posted: !!run?.posted,
         isToday: dateStr === today,
         isSelected: dateStr === selectedDate,
@@ -84,7 +86,7 @@ export default function CalendarView({
           <div className="page-title">
             {MONTH_NAMES[calMonth]} {calYear}
           </div>
-          <div className="page-subtitle">Click a highlighted date to open that day&apos;s candidates</div>
+          <div className="page-subtitle">Click any date to view its candidates, or pick subjects to generate new ones</div>
         </div>
         <div style={{ display: "flex", gap: "var(--space-2)" }}>
           <button className="btn btn-ghost" onClick={prevMonth} style={{ padding: "7px 13px", fontSize: 15, lineHeight: 1 }}>
@@ -98,8 +100,8 @@ export default function CalendarView({
 
       {runs.length === 0 && (
         <div className="empty-state" style={{ maxWidth: 680, marginTop: "var(--space-4)" }}>
-          No posts yet — today&apos;s pipeline runs automatically once a day, or trigger it manually
-          against <code>/api/daily-run</code> to see today&apos;s 5 candidates right away.
+          No posts yet — today&apos;s pipeline runs automatically once a day, or click any date below
+          to choose subjects and generate 5 candidates for it right away.
         </div>
       )}
 
@@ -112,9 +114,9 @@ export default function CalendarView({
         {cells.map((cell) => (
           <button
             key={cell.key}
-            disabled={cell.disabled}
+            disabled={cell.isPad}
             onClick={cell.dateStr ? () => onSelectDate(cell.dateStr as string) : undefined}
-            className={cell.disabled ? undefined : "calendar-cell"}
+            className={cell.isPad ? undefined : "calendar-cell"}
             style={{
               visibility: cell.day === "" ? "hidden" : "visible",
               position: "relative",
@@ -127,12 +129,12 @@ export default function CalendarView({
               borderRadius: "var(--radius-md)",
               background: cell.isSelected
                 ? "var(--gradient-brand-soft)"
-                : cell.disabled
+                : cell.isPad
                   ? "transparent"
                   : "var(--color-bg-elevated)",
               boxShadow: cell.isSelected ? "var(--shadow-glow)" : "none",
-              color: cell.disabled ? "var(--color-neutral-600)" : "var(--color-text)",
-              cursor: cell.disabled ? "default" : "pointer",
+              color: cell.isPad ? "var(--color-neutral-600)" : cell.hasRun ? "var(--color-text)" : "var(--color-neutral-500)",
+              cursor: cell.isPad ? "default" : "pointer",
               fontSize: 13,
               fontWeight: 600,
               display: "flex",

@@ -16,6 +16,7 @@ export function serializeRunDetail(run: RunWithRelations) {
         id: c.id,
         topic: c.topic,
         theme: c.theme,
+        category: c.category,
         draft: c.draft,
         rank: c.rank,
         score: c.score

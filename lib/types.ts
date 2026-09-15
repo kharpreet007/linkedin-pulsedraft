@@ -7,7 +7,7 @@ export interface RunSummary {
   postedSelection: {
     candidateId: string;
     topic: string;
-    theme: Theme;
+    theme: string;
     scoreTotal: number | null;
     postedAt: string;
   } | null;
@@ -30,7 +30,8 @@ export interface CandidateScore {
 export interface Candidate {
   id: string;
   topic: string;
-  theme: Theme;
+  theme: Theme | null;
+  category: KanbanCategory | null;
   draft: string;
   rank: number | null;
   score: CandidateScore | null;

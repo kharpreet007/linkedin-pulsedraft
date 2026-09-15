@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { KANBAN_CATEGORY_LABELS } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,12 @@ export async function GET() {
         ? {
             candidateId: run.postedSelection.candidateId,
             topic: run.postedSelection.topicOverride ?? run.postedSelection.candidate.topic,
-            theme: run.postedSelection.themeOverride ?? run.postedSelection.candidate.theme,
+            theme:
+              run.postedSelection.themeOverride ??
+              run.postedSelection.candidate.theme ??
+              (run.postedSelection.candidate.category
+                ? KANBAN_CATEGORY_LABELS[run.postedSelection.candidate.category]
+                : "—"),
             scoreTotal: run.postedSelection.candidate.score?.total ?? null,
             postedAt: run.postedSelection.postedAt.toISOString(),
           }

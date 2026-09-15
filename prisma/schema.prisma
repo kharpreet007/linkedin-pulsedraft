@@ -44,15 +44,18 @@ model Run {
   engagement      Engagement?
 }
 
-/// One of the day's 5 Scout topics, expanded by Remy into a full draft.
+/// One of the day's 5 Scout topics, expanded by Remy into a full draft. Either `theme` (the
+/// automatic daily pipeline's PM/AI/Psychology split) or `category` (a manually chosen Post Its
+/// subject, used when generating for a specific calendar date) is set, never both.
 model Candidate {
-  id      String  @id @default(cuid())
-  runId   String
-  run     Run     @relation(fields: [runId], references: [id], onDelete: Cascade)
-  topic   String
-  theme   Theme
-  draft   String  @db.Text
-  rank    Int? // 1-5, set once Val has scored & ranked all candidates for the run
+  id       String          @id @default(cuid())
+  runId    String
+  run      Run             @relation(fields: [runId], references: [id], onDelete: Cascade)
+  topic    String
+  theme    Theme?
+  category KanbanCategory?
+  draft    String          @db.Text
+  rank     Int? // 1-5, set once Val has scored & ranked all candidates for the run
 
   score           Score?
   postedSelection PostedSelection?

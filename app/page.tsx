@@ -5,6 +5,7 @@ import Sidebar from "@/components/Sidebar";
 import DashboardView from "@/components/DashboardView";
 import CalendarView from "@/components/CalendarView";
 import DayView from "@/components/DayView";
+import GenerateDayView from "@/components/GenerateDayView";
 import AnalyticsView from "@/components/AnalyticsView";
 import GeneratorView from "@/components/GeneratorView";
 import PostItsView from "@/components/PostItsView";
@@ -194,10 +195,22 @@ export default function Home() {
               <CalendarView runs={runs} today={today} selectedDate={selectedDate} onSelectDate={selectDate} />
             )}
             {view === "day" &&
-              (loadingDetail || !runDetail ? (
+              (loadingDetail ? (
                 <DayViewSkeleton />
-              ) : (
+              ) : runDetail ? (
                 <DayView run={runDetail} today={today} onBack={() => setView("calendar")} onPublish={handlePublish} />
+              ) : (
+                selectedDate && (
+                  <GenerateDayView
+                    date={selectedDate}
+                    today={today}
+                    onBack={() => setView("calendar")}
+                    onGenerated={(detail) => {
+                      setRunDetail(detail);
+                      loadRuns();
+                    }}
+                  />
+                )
               ))}
             {view === "analytics" && <AnalyticsView runs={runs} today={today} />}
             {view === "generator" && <GeneratorView />}

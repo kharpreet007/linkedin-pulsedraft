@@ -12,8 +12,18 @@ export function fetchRuns(): Promise<RunSummary[]> {
   return fetch("/api/runs").then((res) => json<RunSummary[]>(res));
 }
 
-export function fetchRunDetail(date: string): Promise<RunDetail> {
-  return fetch(`/api/runs/${date}`).then((res) => json<RunDetail>(res));
+export async function fetchRunDetail(date: string): Promise<RunDetail | null> {
+  const res = await fetch(`/api/runs/${date}`);
+  if (res.status === 404) return null;
+  return json<RunDetail>(res);
+}
+
+export function generateRunForDate(date: string, categories: KanbanCategory[]): Promise<RunDetail> {
+  return fetch(`/api/runs/${date}/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ categories }),
+  }).then((res) => json<RunDetail>(res));
 }
 
 export function publishCandidate(date: string, candidateId: string): Promise<{ candidateId: string }> {

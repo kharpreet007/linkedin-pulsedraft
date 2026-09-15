@@ -52,8 +52,8 @@ const ICONS: Record<View, JSX.Element> = {
 
 const NAV_ITEMS: { view: View; label: string }[] = [
   { view: "dashboard", label: "Dashboard" },
-  { view: "calendar", label: "Calendar" },
   { view: "postits", label: "Post Its" },
+  { view: "calendar", label: "Calendar" },
   { view: "generator", label: "Post Generator" },
   { view: "analytics", label: "Analytics" },
 ];

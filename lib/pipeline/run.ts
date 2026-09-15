@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/db";
-import { runScout } from "./scout";
+import { runScout, runScoutByCategories } from "./scout";
 import { runRemy } from "./remy";
 import { runVal } from "./val";
+import type { KanbanCategory } from "@prisma/client";
 
 export interface DailyRunResult {
   date: string;
@@ -67,6 +68,77 @@ export async function runDailyPipeline(
           runId: run.id,
           topic: c.topic,
           theme: c.theme,
+          draft: c.draft,
+          rank: c.rank,
+          score: {
+            create: {
+              hook: c.score.hook,
+              insight: c.score.insight,
+              authenticity: c.score.authenticity,
+              engagement: c.score.engagement,
+              clarity: c.score.clarity,
+              total: c.total,
+            },
+          },
+        },
+      });
+    }
+  });
+
+  return { date, created: true };
+}
+
+/**
+ * Same Scout -> Remy -> Val flow as `runDailyPipeline`, but for the Calendar's per-date
+ * generation: topics come only from `categories` (the Post Its subject list) instead of the
+ * fixed PM/AI/Psychology split, and this is meant to be triggered manually for a date that
+ * doesn't have posts yet — unlike `runDailyPipeline`, it throws rather than silently no-op'ing
+ * if the date already has candidates, so the caller can tell the user it's not an empty day.
+ */
+export async function runCategoryPipeline(date: string, categories: KanbanCategory[]): Promise<DailyRunResult> {
+  const existing = await prisma.run.findUnique({
+    where: { date },
+    include: { candidates: true },
+  });
+  if (existing && existing.candidates.length > 0) {
+    throw new Error("This date already has generated posts");
+  }
+
+  const topics = await runScoutByCategories(categories);
+  const drafts: string[] = [];
+  for (const t of topics) {
+    await sleep(GEMINI_CALL_GAP_MS);
+    drafts.push(await runRemy(t.topic));
+  }
+
+  const scoreInputs = topics.map((t, index) => ({ index, topic: t.topic, draft: drafts[index] }));
+  await sleep(GEMINI_CALL_GAP_MS);
+  const scores = await runVal(scoreInputs);
+  const scoreByIndex = new Map(scores.map((s) => [s.index, s]));
+
+  const ranked = topics
+    .map((t, index) => {
+      const score = scoreByIndex.get(index);
+      if (!score) {
+        throw new Error(`Val did not return a score for candidate index ${index}`);
+      }
+      const total = score.hook + score.insight + score.authenticity + score.engagement + score.clarity;
+      return { topic: t.topic, category: t.category, draft: drafts[index], score, total };
+    })
+    .sort((a, b) => b.total - a.total)
+    .map((c, i) => ({ ...c, rank: i + 1 }));
+
+  await prisma.$transaction(async (tx) => {
+    if (existing) {
+      await tx.run.delete({ where: { id: existing.id } });
+    }
+    const run = await tx.run.create({ data: { date } });
+    for (const c of ranked) {
+      await tx.candidate.create({
+        data: {
+          runId: run.id,
+          topic: c.topic,
+          category: c.category,
           draft: c.draft,
           rank: c.rank,
           score: {

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Candidate, RunDetail } from "@/lib/types";
+import { KANBAN_CATEGORY_LABELS } from "@/lib/types";
 import { fmtHeader } from "@/lib/format";
 
 const VAL_PICK_EMAIL = "kharpreet007@gmail.com";
@@ -100,7 +101,7 @@ export default function DayView({
                   <span className={isTopPick ? "tag tag-accent" : "tag tag-neutral"}>
                     {isTopPick ? `Val's Pick #${c.rank}` : `#${c.rank}`}
                   </span>
-                  <span className="tag tag-neutral">{c.theme}</span>
+                  <span className="tag tag-neutral">{c.theme ?? (c.category ? KANBAN_CATEGORY_LABELS[c.category] : "")}</span>
                 </div>
                 {isPosted && (
                   <span className="tag tag-outline" style={{ color: "var(--color-accent-300)", borderColor: "var(--color-accent-600)" }}>
