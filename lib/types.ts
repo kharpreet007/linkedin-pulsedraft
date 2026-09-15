@@ -52,4 +52,14 @@ export interface RunDetail {
   } | null;
 }
 
-export type View = "dashboard" | "calendar" | "day" | "analytics" | "generator";
+export type View = "dashboard" | "calendar" | "day" | "analytics" | "generator" | "kanban";
+
+export type TopicStatus = "Backlog" | "Scheduled" | "Published";
+
+export interface TopicIdea {
+  id: string;
+  title: string;
+  theme: Theme;
+  status: TopicStatus;
+  scheduledDate: string | null;
+}

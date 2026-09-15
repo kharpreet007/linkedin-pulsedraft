@@ -13,6 +13,12 @@ enum Theme {
   Psychology
 }
 
+enum TopicStatus {
+  Backlog
+  Scheduled
+  Published
+}
+
 /// One calendar day's pipeline output: Scout's 5 topics, Remy's drafts, Val's scores.
 model Run {
   id        String   @id @default(cuid())
@@ -76,4 +82,18 @@ model Engagement {
   likes       Int      @default(0)
   comments    Int      @default(0)
   updatedAt   DateTime @updatedAt
+}
+
+/// A manually-curated topic idea on the Kanban planning board. Purely a planning
+/// tool — separate from Scout's own daily brainstorming, never feeds the pipeline.
+model TopicIdea {
+  id            String      @id @default(cuid())
+  title         String
+  theme         Theme
+  status        TopicStatus @default(Backlog)
+  scheduledDate String? // YYYY-MM-DD, set once dragged into Scheduled/Published
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([status])
 }

@@ -7,9 +7,20 @@ import CalendarView from "@/components/CalendarView";
 import DayView from "@/components/DayView";
 import AnalyticsView from "@/components/AnalyticsView";
 import GeneratorView from "@/components/GeneratorView";
+import KanbanView from "@/components/KanbanView";
 import { CalendarSkeleton, DayViewSkeleton } from "@/components/Skeleton";
-import { fetchRuns, fetchRunDetail, publishCandidate, updateSelection, updateEngagement } from "@/lib/api";
-import type { RunSummary, RunDetail, View, Theme } from "@/lib/types";
+import {
+  fetchRuns,
+  fetchRunDetail,
+  publishCandidate,
+  updateSelection,
+  updateEngagement,
+  fetchTopics,
+  createTopic,
+  updateTopic,
+  deleteTopic,
+} from "@/lib/api";
+import type { RunSummary, RunDetail, View, Theme, TopicIdea, TopicStatus } from "@/lib/types";
 
 export default function Home() {
   const [view, setView] = useState<View>("calendar");
@@ -19,11 +30,18 @@ export default function Home() {
   const [runDetail, setRunDetail] = useState<RunDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [topics, setTopics] = useState<TopicIdea[]>([]);
 
   const loadRuns = useCallback(() => {
     fetchRuns()
       .then(setRuns)
       .catch((e) => setErrorMsg(e instanceof Error ? e.message : "Could not load runs"));
+  }, []);
+
+  const loadTopics = useCallback(() => {
+    fetchTopics()
+      .then(setTopics)
+      .catch((e) => setErrorMsg(e instanceof Error ? e.message : "Could not load topics"));
   }, []);
 
   useEffect(() => {
@@ -32,7 +50,8 @@ export default function Home() {
       .then((d) => setToday(d.date))
       .catch(() => {});
     loadRuns();
-  }, [loadRuns]);
+    loadTopics();
+  }, [loadRuns, loadTopics]);
 
   const selectDate = (date: string) => {
     setSelectedDate(date);
@@ -108,6 +127,46 @@ export default function Home() {
     }
   };
 
+  const handleCreateTopic = async (title: string, theme: Theme) => {
+    try {
+      const created = await createTopic(title, theme);
+      setTopics((prev) => [...prev, created]);
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : "Could not add that topic");
+    }
+  };
+
+  const handleMoveTopic = async (id: string, status: TopicStatus) => {
+    setTopics((prev) => prev.map((t) => (t.id === id ? { ...t, status } : t)));
+    try {
+      const updated = await updateTopic(id, { status });
+      setTopics((prev) => prev.map((t) => (t.id === id ? updated : t)));
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : "Could not move that topic");
+      loadTopics();
+    }
+  };
+
+  const handleSetTopicDate = async (id: string, date: string) => {
+    setTopics((prev) => prev.map((t) => (t.id === id ? { ...t, scheduledDate: date } : t)));
+    try {
+      await updateTopic(id, { scheduledDate: date });
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : "Could not update that date");
+      loadTopics();
+    }
+  };
+
+  const handleDeleteTopic = async (id: string) => {
+    setTopics((prev) => prev.filter((t) => t.id !== id));
+    try {
+      await deleteTopic(id);
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : "Could not delete that topic");
+      loadTopics();
+    }
+  };
+
   return (
     <div style={{ display: "flex", height: "100vh", color: "var(--color-text)", fontFamily: "var(--font-body)" }}>
       <Sidebar
@@ -165,6 +224,16 @@ export default function Home() {
               ))}
             {view === "analytics" && <AnalyticsView runs={runs} today={today} />}
             {view === "generator" && <GeneratorView />}
+            {view === "kanban" && (
+              <KanbanView
+                topics={topics}
+                today={today}
+                onCreate={handleCreateTopic}
+                onMove={handleMoveTopic}
+                onSetDate={handleSetTopicDate}
+                onDelete={handleDeleteTopic}
+              />
+            )}
           </>
         )}
       </main>
