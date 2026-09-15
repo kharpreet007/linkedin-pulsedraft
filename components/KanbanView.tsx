@@ -10,6 +10,24 @@ const MONTH_NAMES = [
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const THEMES: Theme[] = ["PM", "AI", "Psychology"];
 
+const SUGGESTED_TOPICS: { title: string; theme: Theme }[] = [
+  { title: "Why roadmaps break trust with engineering", theme: "PM" },
+  { title: "The feature nobody asked for that shipped anyway", theme: "PM" },
+  { title: "Saying no to your loudest stakeholder", theme: "PM" },
+  { title: "When metrics lie about what users actually want", theme: "PM" },
+  { title: "Why 'quick win' features rarely are", theme: "PM" },
+  { title: "The junior talent paradox: AI automating what used to train juniors", theme: "AI" },
+  { title: "When AI agents hallucinate with total confidence", theme: "AI" },
+  { title: "Why prompt engineering is really just clear thinking", theme: "AI" },
+  { title: "The gap between AI demos and AI in production", theme: "AI" },
+  { title: "What AI still can't replace about judgment calls", theme: "AI" },
+  { title: "Why feedback feels personal even when it isn't", theme: "Psychology" },
+  { title: "The psychology of standup dread", theme: "Psychology" },
+  { title: "Why we overestimate how much people notice our mistakes", theme: "Psychology" },
+  { title: "The quiet cost of always being \"on\" at work", theme: "Psychology" },
+  { title: "Why praise in public and criticism in private isn't always right", theme: "Psychology" },
+];
+
 function themeCardClass(theme: Theme): string {
   if (theme === "PM") return "topic-card topic-card-pm";
   if (theme === "AI") return "topic-card topic-card-ai";
@@ -38,9 +56,11 @@ export default function KanbanView({
   const [todayYear, todayMonth] = today.split("-").map((n) => Number(n));
   const [calYear, setCalYear] = useState(todayYear);
   const [calMonth, setCalMonth] = useState(todayMonth - 1);
-  const [title, setTitle] = useState("");
-  const [theme, setTheme] = useState<Theme>("PM");
+  const [pendingSubject, setPendingSubject] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const existingTitles = useMemo(() => new Set(topics.map((t) => t.title)), [topics]);
+  const availableSubjects = SUGGESTED_TOPICS.filter((s) => !existingTitles.has(s.title));
 
   const monthKey = `${calYear}-${String(calMonth + 1).padStart(2, "0")}`;
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
@@ -81,10 +101,10 @@ export default function KanbanView({
   };
 
   const submitCreate = () => {
-    const trimmed = title.trim();
-    if (!trimmed) return;
-    onCreate(trimmed, theme);
-    setTitle("");
+    const subject = availableSubjects.find((s) => s.title === pendingSubject);
+    if (!subject) return;
+    onCreate(subject.title, subject.theme);
+    setPendingSubject("");
   };
 
   const generateCalendar = () => {
@@ -121,7 +141,7 @@ export default function KanbanView({
 
   return (
     <>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-3)", alignItems: "center", justifyContent: "space-between" }}>
         <div>
           <div className="page-title">Kanban</div>
           <div className="page-subtitle">
@@ -144,35 +164,35 @@ export default function KanbanView({
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: "var(--space-4)", marginTop: "var(--space-4)", alignItems: "flex-start" }}>
-        <div className="kanban-column" style={{ width: 300, flexShrink: 0 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-4)", marginTop: "var(--space-4)", alignItems: "flex-start" }}>
+        <div className="kanban-column" style={{ flex: "1 1 280px", maxWidth: 320, minWidth: 0 }}>
           <div className="eyebrow" style={{ marginBottom: "var(--space-3)" }}>
             Topic pool · {topics.length}
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)", marginBottom: "var(--space-3)" }}>
-            <input
+          <div style={{ display: "flex", gap: "var(--space-2)", marginBottom: "var(--space-3)" }}>
+            <select
               className="input"
-              type="text"
-              placeholder="New topic idea…"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") submitCreate();
-              }}
-            />
-            <div style={{ display: "flex", gap: "var(--space-2)" }}>
-              <select className="input" value={theme} onChange={(e) => setTheme(e.target.value as Theme)} style={{ flex: 1 }}>
-                {THEMES.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-              <button className="btn btn-primary" onClick={submitCreate} disabled={!title.trim()}>
-                Add
-              </button>
-            </div>
+              value={pendingSubject}
+              onChange={(e) => setPendingSubject(e.target.value)}
+              style={{ flex: 1, minWidth: 0 }}
+            >
+              <option value="">Choose a subject…</option>
+              {THEMES.map((th) => (
+                <optgroup key={th} label={th}>
+                  {availableSubjects
+                    .filter((s) => s.theme === th)
+                    .map((s) => (
+                      <option key={s.title} value={s.title}>
+                        {s.title}
+                      </option>
+                    ))}
+                </optgroup>
+              ))}
+            </select>
+            <button className="btn btn-primary" onClick={submitCreate} disabled={!pendingSubject}>
+              Add
+            </button>
           </div>
 
           <div className="eyebrow-sm" style={{ marginBottom: 6 }}>
@@ -218,7 +238,7 @@ export default function KanbanView({
           </button>
         </div>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ flex: "1 1 320px", minWidth: 0 }}>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 6, marginBottom: 6 }}>
             {WEEKDAY_LABELS.map((wd) => (
               <div key={wd} className="eyebrow" style={{ textAlign: "center" }}>
