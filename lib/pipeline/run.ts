@@ -8,6 +8,10 @@ export interface DailyRunResult {
   created: boolean;
 }
 
+// Spaces out Gemini calls to stay under low per-minute rate limits on free-tier API keys.
+const GEMINI_CALL_GAP_MS = 3000;
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 /**
  * Runs Scout -> Remy -> Val for `date` and persists the result. Idempotent: if a Run already
  * exists for that date with candidates, it's left alone unless `force` is set. `force` deletes
@@ -27,14 +31,16 @@ export async function runDailyPipeline(
   }
 
   const topics = await runScout();
-  // Sequential, not Promise.all: firing all 5 Remy calls at once spikes requests-per-minute
-  // enough to trip Gemini's rate limit on lower-tier API keys.
+  // Sequential, not Promise.all, with a gap between each: firing all 5 Remy calls back-to-back
+  // spikes requests-per-minute enough to trip Gemini's rate limit on lower-tier API keys.
   const drafts: string[] = [];
   for (const t of topics) {
+    await sleep(GEMINI_CALL_GAP_MS);
     drafts.push(await runRemy(t.topic));
   }
 
   const scoreInputs = topics.map((t, index) => ({ index, topic: t.topic, draft: drafts[index] }));
+  await sleep(GEMINI_CALL_GAP_MS);
   const scores = await runVal(scoreInputs);
   const scoreByIndex = new Map(scores.map((s) => [s.index, s]));
 
