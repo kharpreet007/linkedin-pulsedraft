@@ -10,33 +10,24 @@ const MONTH_NAMES = [
 ];
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const ALL_CATEGORIES = Object.keys(KANBAN_CATEGORY_LABELS) as KanbanCategory[];
-const MAX_RANGE_DAYS = 366;
-
-function addDays(dateStr: string, days: number): string {
-  const d = new Date(dateStr + "T00:00:00");
-  d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
-}
 
 export default function KanbanView({
   assignments,
   today,
-  onGenerate,
+  onAssign,
   onMarkPublished,
   onRemoveAssignment,
 }: {
   assignments: TopicAssignment[];
   today: string;
-  onGenerate: (items: { category: KanbanCategory; date: string }[]) => void;
+  onAssign: (category: KanbanCategory, date: string) => void;
   onMarkPublished: (assignmentId: string) => void;
   onRemoveAssignment: (assignmentId: string) => void;
 }) {
   const [todayYear, todayMonth] = today.split("-").map((n) => Number(n));
   const [calYear, setCalYear] = useState(todayYear);
   const [calMonth, setCalMonth] = useState(todayMonth - 1);
-  const [selectedCategories, setSelectedCategories] = useState<Set<KanbanCategory>>(new Set());
-  const [startDate, setStartDate] = useState(today);
-  const [endDate, setEndDate] = useState(() => addDays(today, 29));
+  const [dragOverDate, setDragOverDate] = useState<string | null>(null);
 
   const monthKey = `${calYear}-${String(calMonth + 1).padStart(2, "0")}`;
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
@@ -49,17 +40,6 @@ export default function KanbanView({
     }
     return map;
   }, [assignments, monthKey]);
-
-  const allAssignedDates = useMemo(() => new Set(assignments.map((a) => a.date)), [assignments]);
-
-  const toggleCategory = (c: KanbanCategory) => {
-    setSelectedCategories((prev) => {
-      const next = new Set(prev);
-      if (next.has(c)) next.delete(c);
-      else next.add(c);
-      return next;
-    });
-  };
 
   const prevMonth = () => {
     if (calMonth === 0) {
@@ -78,28 +58,6 @@ export default function KanbanView({
     }
   };
 
-  const canGenerate = selectedCategories.size >= 2 && startDate <= endDate;
-
-  const generateCalendar = () => {
-    if (!canGenerate) return;
-    const categories = ALL_CATEGORIES.filter((c) => selectedCategories.has(c));
-
-    const items: { category: KanbanCategory; date: string }[] = [];
-    let cursor = 0;
-    let date = startDate;
-    let guard = 0;
-    while (date <= endDate && guard < MAX_RANGE_DAYS) {
-      if (!allAssignedDates.has(date)) {
-        items.push({ category: categories[cursor % categories.length], date });
-        cursor += 1;
-      }
-      date = addDays(date, 1);
-      guard += 1;
-    }
-
-    if (items.length > 0) onGenerate(items);
-  };
-
   const cells: { day: number | ""; dateStr: string | null }[] = [];
   for (let i = 0; i < startOffset; i++) cells.push({ day: "", dateStr: null });
   for (let d = 1; d <= daysInMonth; d++) {
@@ -111,9 +69,7 @@ export default function KanbanView({
       <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-3)", alignItems: "center", justifyContent: "space-between" }}>
         <div>
           <div className="page-title">Kanban</div>
-          <div className="page-subtitle">
-            Pick categories and a date range — assignments cycle through them evenly, day by day
-          </div>
+          <div className="page-subtitle">Drag a category onto a day to assign it there</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
           <div className="page-title" style={{ fontSize: 15 }}>
@@ -131,53 +87,23 @@ export default function KanbanView({
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-4)", marginTop: "var(--space-4)", alignItems: "flex-start" }}>
-        <div className="kanban-column" style={{ flex: "1 1 280px", maxWidth: 320, minWidth: 0 }}>
+        <div className="kanban-column" style={{ flex: "1 1 200px", maxWidth: 240, minWidth: 0 }}>
           <div className="eyebrow" style={{ marginBottom: "var(--space-3)" }}>
-            Categories · {selectedCategories.size} selected
+            Categories
           </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)", marginBottom: "var(--space-4)" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
             {ALL_CATEGORIES.map((c) => (
-              <label key={c} className="topic-card" style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
-                <input type="checkbox" checked={selectedCategories.has(c)} onChange={() => toggleCategory(c)} />
-                <span style={{ fontSize: 13 }}>{KANBAN_CATEGORY_LABELS[c]}</span>
-              </label>
+              <div
+                key={c}
+                className="topic-card"
+                draggable
+                onDragStart={(e) => e.dataTransfer.setData("text/plain", c)}
+                style={{ cursor: "grab", fontSize: 13 }}
+              >
+                {KANBAN_CATEGORY_LABELS[c]}
+              </div>
             ))}
           </div>
-
-          <div className="eyebrow-sm" style={{ marginBottom: 6 }}>
-            Date range
-          </div>
-          <div style={{ display: "flex", gap: "var(--space-2)", marginBottom: "var(--space-3)" }}>
-            <input
-              type="date"
-              className="input"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              style={{ flex: 1, minWidth: 0, fontSize: 12 }}
-            />
-            <input
-              type="date"
-              className="input"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              style={{ flex: 1, minWidth: 0, fontSize: 12 }}
-            />
-          </div>
-          {startDate > endDate && (
-            <div className="empty-state" style={{ fontSize: 12, marginBottom: "var(--space-3)" }}>
-              Start date must be on or before the end date.
-            </div>
-          )}
-          {selectedCategories.size === 1 && (
-            <div className="empty-state" style={{ fontSize: 12, marginBottom: "var(--space-3)" }}>
-              Pick at least 2 categories to cycle through.
-            </div>
-          )}
-
-          <button className="btn btn-primary" onClick={generateCalendar} disabled={!canGenerate} style={{ width: "100%" }}>
-            Generate ({selectedCategories.size} selected)
-          </button>
         </div>
 
         <div style={{ flex: "1 1 320px", minWidth: 0 }}>
@@ -191,15 +117,34 @@ export default function KanbanView({
           <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 6 }}>
             {cells.map((cell, i) => {
               const assigned = cell.dateStr ? assignedByDate.get(cell.dateStr) : undefined;
+              const isDragOver = cell.dateStr !== null && dragOverDate === cell.dateStr;
               return (
                 <div
                   key={i}
                   className={assigned ? "topic-card" : undefined}
+                  onDragOver={(e) => {
+                    if (!cell.dateStr || assigned) return;
+                    e.preventDefault();
+                    setDragOverDate(cell.dateStr);
+                  }}
+                  onDragLeave={() => setDragOverDate((d) => (d === cell.dateStr ? null : d))}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setDragOverDate(null);
+                    if (!cell.dateStr || assigned) return;
+                    const category = e.dataTransfer.getData("text/plain") as KanbanCategory;
+                    if (ALL_CATEGORIES.includes(category)) onAssign(category, cell.dateStr);
+                  }}
                   style={{
                     visibility: cell.day === "" ? "hidden" : "visible",
                     minHeight: 84,
                     borderRadius: "var(--radius-md)",
-                    border: assigned ? undefined : "1px solid var(--color-neutral-800)",
+                    border: assigned
+                      ? undefined
+                      : isDragOver
+                        ? "1px solid var(--color-accent-600)"
+                        : "1px solid var(--color-neutral-800)",
+                    background: !assigned && isDragOver ? "var(--gradient-brand-soft)" : undefined,
                     padding: 6,
                     display: "flex",
                     flexDirection: "column",

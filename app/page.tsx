@@ -30,7 +30,6 @@ export default function Home() {
   const [runDetail, setRunDetail] = useState<RunDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [assignments, setAssignments] = useState<TopicAssignment[]>([]);
 
   const loadRuns = useCallback(() => {
@@ -128,20 +127,12 @@ export default function Home() {
     }
   };
 
-  const handleGenerateCalendar = async (items: { category: KanbanCategory; date: string }[]) => {
-    setErrorMsg(null);
-    setStatusMsg(null);
+  const handleAssignDay = async (category: KanbanCategory, date: string) => {
     try {
-      const result = await generateAssignments(items);
-      setStatusMsg(
-        `Sent ${items.length} day(s) to fill — server actually created ${result.created} new assignment(s).` +
-          (result.created < items.length
-            ? " Some days were skipped, likely because they already had something assigned."
-            : "")
-      );
+      await generateAssignments([{ category, date }]);
       loadAssignments();
     } catch (e) {
-      setErrorMsg(e instanceof Error ? e.message : "Could not generate the calendar");
+      setErrorMsg(e instanceof Error ? e.message : "Could not assign that day");
     }
   };
 
@@ -198,27 +189,6 @@ export default function Home() {
             {errorMsg}
           </div>
         )}
-        {statusMsg && (
-          <div
-            style={{
-              fontSize: 13,
-              color: "var(--color-neutral-300)",
-              border: "1px solid var(--color-neutral-700)",
-              borderRadius: "var(--radius-md)",
-              padding: "var(--space-2) var(--space-3)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "var(--space-3)",
-            }}
-          >
-            <span>{statusMsg}</span>
-            <button className="link-btn" onClick={() => setStatusMsg(null)}>
-              Dismiss
-            </button>
-          </div>
-        )}
-
         {runs === null ? (
           <CalendarSkeleton />
         ) : (
@@ -246,7 +216,7 @@ export default function Home() {
               <KanbanView
                 assignments={assignments}
                 today={today}
-                onGenerate={handleGenerateCalendar}
+                onAssign={handleAssignDay}
                 onMarkPublished={handleMarkPublished}
                 onRemoveAssignment={handleRemoveAssignment}
               />
