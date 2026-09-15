@@ -2,8 +2,8 @@
 
 A daily content pipeline for LinkedIn posts. Once a day, three AI stages run automatically:
 
-1. **Scout** — searches Reddit/Google/Quora (via Gemini's Google Search grounding tool) for trending
-   PM / AI / workplace-psychology discussions and picks 5 candidate topics.
+1. **Scout** — pulls real hot threads from a curated set of subreddits (via Reddit's own API) across
+   PM / AI / workplace-psychology, then a plain Gemini call synthesizes them into 5 candidate topics.
 2. **Remy** — expands each topic into a full storyteller-style draft (150–200 words, line-by-line,
    no hashtags/emojis, ends on an open question).
 3. **Val** — scores each draft 0–10 on Hook / Insight / Authenticity / Engagement / Clarity (50
@@ -19,14 +19,15 @@ LinkedIn API integration for pulling live metrics, by design.
 
 - **Next.js 14** (App Router, TypeScript) — UI + API routes
 - **Prisma + Postgres** — persistence (`Run`, `Candidate`, `Score`, `PostedSelection`, `Engagement`)
-- **Gemini API** (`@google/genai`) — Scout/Remy/Val, Scout using the `googleSearch` grounding tool
+- **Gemini API** (`@google/genai`) — Scout/Remy/Val, all plain generation with structured JSON output
+- **Reddit API** — Scout's source of real trending threads (read-only, `client_credentials` OAuth)
 - **Vercel Cron** (`vercel.json`) — triggers the daily run
 
 ## Local setup
 
 ```bash
 npm install
-cp .env.example .env        # fill in DATABASE_URL, GEMINI_API_KEY, CRON_SECRET
+cp .env.example .env        # fill in DATABASE_URL, GEMINI_API_KEY, REDDIT_CLIENT_ID/SECRET, CRON_SECRET
 npx prisma migrate dev      # creates the schema against DATABASE_URL
 npm run dev                 # http://localhost:3000
 ```
@@ -37,11 +38,18 @@ all work; a local `postgres` works for development too. If your DB is on Railway
 networking / the TCP proxy is enabled on that Postgres service — otherwise anything outside
 Railway's network (Vercel included) can't reach it.
 
-`GEMINI_API_KEY` — get one at https://aistudio.google.com/apikey. Scout's Google Search grounding
-calls incur their own per-request cost beyond plain generation once you're past the free tier — see
-https://ai.google.dev/gemini-api/docs/pricing. Gemini model names rotate fairly often; if
-`GEMINI_MODEL`'s default (`gemini-3.6-flash`) 404s, check
-https://ai.google.dev/gemini-api/docs/models for the current list.
+`GEMINI_API_KEY` — get one at https://aistudio.google.com/apikey. Gemini model names rotate fairly
+often; if `GEMINI_MODEL`'s default (`gemini-3.6-flash`) 404s, check
+https://ai.google.dev/gemini-api/docs/models for the current list. Free-tier keys have low
+per-minute rate limits — the pipeline spaces its 7 Gemini calls out with a short delay to stay under
+them, but a project with billing enabled is more reliable for daily production use.
+
+`REDDIT_CLIENT_ID` / `REDDIT_CLIENT_SECRET` — register a free app at
+https://www.reddit.com/prefs/apps (type "script" or "web app" both work) to get these. No user
+login is needed — Scout authenticates as the app itself (`client_credentials` grant) purely to read
+public hot-thread listings. `REDDIT_USER_AGENT` should be a unique, descriptive string per Reddit's
+API rules (format: `platform:appid:version (by /u/yourusername)`) — a generic or missing one can get
+rate-limited harder.
 
 ## Running the pipeline manually
 
@@ -75,9 +83,9 @@ reach a publicly-routable `DATABASE_URL`, so migrating at build time works fine 
 ## Deploying (Vercel)
 
 1. Push this repo to GitHub and import it in Vercel.
-2. Set `DATABASE_URL`, `GEMINI_API_KEY`, `GEMINI_MODEL` (optional), `CRON_SECRET`, and
-   `PULSECRAFT_TIMEZONE` as project env vars (scope them to whichever environments you deploy —
-   Production and/or Preview).
+2. Set `DATABASE_URL`, `GEMINI_API_KEY`, `GEMINI_MODEL` (optional), `REDDIT_CLIENT_ID`,
+   `REDDIT_CLIENT_SECRET`, `REDDIT_USER_AGENT`, `CRON_SECRET`, and `PULSECRAFT_TIMEZONE` as project
+   env vars (scope them to whichever environments you deploy — Production and/or Preview).
 3. In Project Settings → Build & Development Settings, override the **Build Command** to
    `npm run build:vercel` so every deploy applies pending schema migrations against `DATABASE_URL`
    before building (see "Migrations: build vs. start" above — plain `next build` skips migrations
@@ -101,8 +109,8 @@ reach a publicly-routable `DATABASE_URL`, so migrating at build time works fine 
 2. In the service's **Variables** tab, set `DATABASE_URL=${{ Postgres.DATABASE_URL }}` (reference
    the Postgres plugin rather than pasting a static string, so it stays correct if Railway ever
    rotates it — check the Postgres plugin's own Variables tab for its exact reference name if
-   you've renamed it), plus `GEMINI_API_KEY`, `GEMINI_MODEL`, `CRON_SECRET`, and
-   `PULSECRAFT_TIMEZONE`.
+   you've renamed it), plus `GEMINI_API_KEY`, `GEMINI_MODEL`, `REDDIT_CLIENT_ID`,
+   `REDDIT_CLIENT_SECRET`, `REDDIT_USER_AGENT`, `CRON_SECRET`, and `PULSECRAFT_TIMEZONE`.
 3. No Build Command override needed — Railway runs `npm run build` then `npm start`, and `npm
    start` is what applies migrations here (see "Migrations: build vs. start" above).
 4. Railway has no built-in cron for a web service; trigger `/api/daily-run` daily with Railway's

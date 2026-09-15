@@ -1,4 +1,6 @@
-import { getGeminiClient, GEMINI_MODEL, extractJson } from "@/lib/gemini";
+import { Type } from "@google/genai";
+import { getGeminiClient, GEMINI_MODEL } from "@/lib/gemini";
+import { fetchTrendingRedditThreads } from "./reddit";
 import type { Theme } from "@prisma/client";
 
 export interface ScoutTopic {
@@ -8,34 +10,60 @@ export interface ScoutTopic {
 
 const SYSTEM_PROMPT = `You are Scout, a research analyst for a LinkedIn content pipeline aimed at
 product managers, AI practitioners, and people interested in workplace/user psychology.
-Your job is to find what's genuinely being discussed right now — not generic advice topics.`;
+Your job is to turn real, currently-trending Reddit discussions into sharp LinkedIn post topics —
+not generic advice topics.`;
 
-const USER_PROMPT = `Search Reddit, Google, and Quora for discussions trending in the last few days
-across three areas: product management, applied/practical AI, and user or workplace psychology.
-Look for real threads, complaints, debates, or observations — not press releases or generic "top tips" content.
+function buildPrompt(threads: { theme: Theme; subreddit: string; title: string }[]): string {
+  const listing = threads
+    .map((t) => `[${t.theme}] r/${t.subreddit}: "${t.title}"`)
+    .join("\n");
 
-From what you find, produce exactly 5 candidate topics for today's LinkedIn post, each grounded in a
-real discussion or observation you found. Spread them across the three themes (a mix, not all one theme).
+  return `Here are real threads currently hot on Reddit across product management, AI, and
+workplace/user psychology:
 
-Return ONLY a JSON array of exactly 5 objects, nothing else — no preamble, no markdown fence, no commentary:
-[{"topic": "<a specific, punchy topic phrased as a post idea>", "theme": "PM" | "AI" | "Psychology"}, ...]`;
+${listing}
+
+From these, produce exactly 5 candidate topics for today's LinkedIn post. Each topic must be
+grounded in one of the threads above (don't invent unrelated ideas), phrased as a specific, punchy
+post idea rather than the raw thread title. Spread the 5 across the three themes (a mix, not all
+one theme).`;
+}
 
 export async function runScout(): Promise<ScoutTopic[]> {
-  const ai = getGeminiClient();
+  const threads = await fetchTrendingRedditThreads();
+  if (threads.length === 0) {
+    throw new Error("Reddit returned no threads to scout from");
+  }
 
-  // Google Search grounding and forced JSON output can't be combined in one request,
-  // so the JSON-only instruction lives in the prompt and gets parsed out below instead.
+  const ai = getGeminiClient();
   const response = await ai.models.generateContent({
     model: GEMINI_MODEL,
-    contents: USER_PROMPT,
+    contents: buildPrompt(threads),
     config: {
       systemInstruction: SYSTEM_PROMPT,
-      tools: [{ googleSearch: {} }],
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            topic: { type: Type.STRING },
+            theme: { type: Type.STRING, enum: ["PM", "AI", "Psychology"] },
+          },
+          required: ["topic", "theme"],
+        },
+      },
     },
   });
 
   const text = response.text ?? "";
-  const topics = extractJson<ScoutTopic[]>(text);
+  let topics: ScoutTopic[];
+  try {
+    topics = JSON.parse(text) as ScoutTopic[];
+  } catch {
+    throw new Error("Scout returned invalid JSON: " + text.slice(0, 200));
+  }
+
   if (!Array.isArray(topics) || topics.length !== 5) {
     throw new Error(
       `Scout returned ${Array.isArray(topics) ? topics.length : "a non-array"} topics, expected 5`
