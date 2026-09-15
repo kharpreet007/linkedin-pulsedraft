@@ -74,9 +74,14 @@ private networking is available. Deploying to Railway, Render, Fly.io, or any pl
 persistent Node process via `npm start` needs no extra configuration — migrations just happen automatically each start.
 
 Vercel's standard Next.js deployment is serverless and **never invokes `npm start`**, so that path
-doesn't apply there. Use `npm run build:vercel` (`prisma migrate deploy && next build`) as the
-Vercel project's **Build Command** override instead — Vercel's build step runs somewhere that can
-reach a publicly-routable `DATABASE_URL`, so migrating at build time works fine there.
+doesn't apply there. `vercel.json` sets `"buildCommand": "npm run build:vercel"`
+(`prisma migrate deploy && next build`) so every Vercel deploy migrates before building — Vercel's
+build step runs somewhere that can reach a publicly-routable `DATABASE_URL`, so migrating at build
+time works fine there. This is committed to the repo rather than left as a dashboard setting, since
+a dashboard-only Build Command override is easy to lose (a project re-import, a settings reset) and
+migrations then silently stop applying — if your Vercel project also has a manual Build Command
+override set in Project Settings, clear it back to default so `vercel.json` is the one source of
+truth.
 
 ## Deploying (Vercel)
 
@@ -84,10 +89,10 @@ reach a publicly-routable `DATABASE_URL`, so migrating at build time works fine 
 2. Set `DATABASE_URL`, `GEMINI_API_KEY`, `GEMINI_MODEL` (optional), `CRON_SECRET`, and
    `PULSECRAFT_TIMEZONE` as project env vars (scope them to whichever environments you deploy —
    Production and/or Preview).
-3. In Project Settings → Build & Development Settings, override the **Build Command** to
-   `npm run build:vercel` so every deploy applies pending schema migrations against `DATABASE_URL`
-   before building (see "Migrations: build vs. start" above — plain `next build` skips migrations
-   entirely).
+3. No Build Command setup needed — `vercel.json` already sets it to `npm run build:vercel`, which
+   applies pending schema migrations against `DATABASE_URL` before building (see "Migrations: build
+   vs. start" above). If Project Settings → Build & Development Settings shows a manual override,
+   clear it back to default so it doesn't shadow `vercel.json`.
 4. `vercel.json` already defines a cron hitting `/api/daily-run` at `0 13 * * *` (13:00 UTC ≈
    9am US Eastern, DST-dependent — adjust the cron expression and/or `PULSECRAFT_TIMEZONE` for
    your actual timezone). Vercel signs cron requests with `Authorization: Bearer $CRON_SECRET`
