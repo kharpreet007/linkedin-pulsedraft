@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import type { RunSummary } from "@/lib/types";
 import { fmtLabel } from "@/lib/format";
+import ScoreVsEngagementChart from "./ScoreVsEngagementChart";
 
 export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; today: string }) {
   const posted = useMemo(() => runs.filter((r) => r.postedSelection), [runs]);
@@ -50,26 +51,32 @@ export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; tod
 
   const scoreVsResultRows = posted
     .filter((r) => r.postedSelection && r.postedSelection.scoreTotal !== null)
-    .map((r) => ({
-      date: fmtLabel(r.date, today),
-      topic: r.postedSelection!.topic,
-      score: r.postedSelection!.scoreTotal,
-      impressions: r.engagement?.impressions ?? 0,
-      likes: r.engagement?.likes ?? 0,
-      comments: r.engagement?.comments ?? 0,
-    }));
+    .map((r) => {
+      const impressions = r.engagement?.impressions ?? 0;
+      const likes = r.engagement?.likes ?? 0;
+      const comments = r.engagement?.comments ?? 0;
+      return {
+        date: fmtLabel(r.date, today),
+        topic: r.postedSelection!.topic,
+        score: r.postedSelection!.scoreTotal as number,
+        engagement: likes + comments,
+        impressions,
+        likes,
+        comments,
+      };
+    });
 
   return (
     <>
       <div>
-        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 24, letterSpacing: "-0.01em" }}>Analytics</div>
+        <div className="page-title">Analytics</div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: "var(--space-3)", marginTop: "var(--space-4)" }}>
         {kpis.map((k) => (
           <div className="card" key={k.label}>
             <div className="card-meta">{k.label}</div>
-            <div style={{ fontFamily: "var(--font-heading)", fontSize: 28, fontWeight: 700, marginTop: 6, letterSpacing: "-0.02em" }}>
+            <div className="stat-value" style={{ marginTop: 6 }}>
               {k.value}
             </div>
           </div>
@@ -89,6 +96,11 @@ export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; tod
           <div className="card-title" style={{ fontSize: 16, marginBottom: "var(--space-3)" }}>
             Val&apos;s score vs. actual results
           </div>
+          {scoreVsResultRows.length > 0 && (
+            <div style={{ marginBottom: "var(--space-4)" }}>
+              <ScoreVsEngagementChart points={scoreVsResultRows} />
+            </div>
+          )}
           <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
             {scoreVsResultRows.map((r, i) => (
               <div key={i} style={{ border: "1px solid var(--color-neutral-800)", borderRadius: "var(--radius-md)", padding: "var(--space-3)" }}>
@@ -105,7 +117,7 @@ export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; tod
               </div>
             ))}
             {scoreVsResultRows.length === 0 && (
-              <div style={{ fontSize: 13, color: "var(--color-neutral-400)" }}>No published posts yet.</div>
+              <div className="empty-state">No published posts yet.</div>
             )}
           </div>
         </div>
@@ -129,7 +141,7 @@ export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; tod
               </div>
             ))}
             {themeRows.length === 0 && (
-              <div style={{ fontSize: 13, color: "var(--color-neutral-400)" }}>No published posts yet.</div>
+              <div className="empty-state">No published posts yet.</div>
             )}
           </div>
         </div>

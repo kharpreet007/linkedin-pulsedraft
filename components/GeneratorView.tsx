@@ -59,10 +59,8 @@ export default function GeneratorView() {
   return (
     <>
       <div>
-        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 24, letterSpacing: "-0.01em" }}>Post Generator</div>
-        <div style={{ fontSize: 13, color: "var(--color-neutral-300)", marginTop: 4 }}>
-          Give Remy a topic — get back a full storyteller-style draft
-        </div>
+        <div className="page-title">Post Generator</div>
+        <div className="page-subtitle">Give Remy a topic — get back a full storyteller-style draft</div>
       </div>
 
       <div style={{ display: "flex", gap: "var(--space-3)", maxWidth: 640, marginTop: "var(--space-4)" }}>

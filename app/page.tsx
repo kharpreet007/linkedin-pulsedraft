@@ -7,6 +7,7 @@ import CalendarView from "@/components/CalendarView";
 import DayView from "@/components/DayView";
 import AnalyticsView from "@/components/AnalyticsView";
 import GeneratorView from "@/components/GeneratorView";
+import { CalendarSkeleton, DayViewSkeleton } from "@/components/Skeleton";
 import { fetchRuns, fetchRunDetail, publishCandidate, updateSelection, updateEngagement } from "@/lib/api";
 import type { RunSummary, RunDetail, View, Theme } from "@/lib/types";
 
@@ -142,7 +143,7 @@ export default function Home() {
         )}
 
         {runs === null ? (
-          <div style={{ fontSize: 13, color: "var(--color-neutral-400)" }}>Loading…</div>
+          <CalendarSkeleton />
         ) : (
           <>
             {view === "dashboard" && (
@@ -158,7 +159,7 @@ export default function Home() {
             )}
             {view === "day" &&
               (loadingDetail || !runDetail ? (
-                <div style={{ fontSize: 13, color: "var(--color-neutral-400)" }}>Loading…</div>
+                <DayViewSkeleton />
               ) : (
                 <DayView run={runDetail} today={today} onBack={() => setView("calendar")} onPublish={handlePublish} />
               ))}

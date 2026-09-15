@@ -270,3 +270,111 @@ a:hover {
   border-radius: 999px;
   background: var(--gradient-brand);
 }
+
+.page-title {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 24px;
+  letter-spacing: -0.01em;
+}
+
+.page-subtitle {
+  font-size: 13px;
+  color: var(--color-neutral-300);
+  margin-top: 4px;
+}
+
+.stat-value {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 28px;
+  letter-spacing: -0.02em;
+}
+
+.eyebrow {
+  font-size: 11px;
+  color: var(--color-neutral-500);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+}
+
+.eyebrow-sm {
+  font-size: 10px;
+  color: var(--color-neutral-500);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.empty-state {
+  border: 1px dashed var(--color-neutral-700);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  font-size: 13px;
+  color: var(--color-neutral-300);
+  background: var(--color-bg-elevated);
+}
+
+.skeleton {
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    100deg,
+    var(--color-neutral-800) 30%,
+    var(--color-neutral-700) 50%,
+    var(--color-neutral-800) 70%
+  );
+  background-size: 300% 100%;
+  animation: skeleton-shimmer 1.6s ease-in-out infinite;
+}
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: -100% 50%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+}
+
+.chart-tooltip {
+  position: absolute;
+  pointer-events: none;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-neutral-700);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: nowrap;
+  z-index: 10;
+}
+.chart-dot {
+  fill: var(--color-accent);
+  stroke: var(--color-bg-elevated);
+  stroke-width: 2;
+  transition: r 0.1s ease;
+}
+.chart-dot-hit {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.link-btn {
+  border: none;
+  background: transparent;
+  color: var(--color-accent-300);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0;
+  font-family: inherit;
+}
+.link-btn:hover {
+  color: var(--color-accent);
+  text-decoration: underline;
+}

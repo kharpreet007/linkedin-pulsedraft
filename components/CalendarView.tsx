@@ -81,12 +81,10 @@ export default function CalendarView({
     <>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: 680 }}>
         <div>
-          <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 24, letterSpacing: "-0.01em" }}>
+          <div className="page-title">
             {MONTH_NAMES[calMonth]} {calYear}
           </div>
-          <div style={{ fontSize: 13, color: "var(--color-neutral-400)", marginTop: 4 }}>
-            Click a highlighted date to open that day&apos;s candidates
-          </div>
+          <div className="page-subtitle">Click a highlighted date to open that day&apos;s candidates</div>
         </div>
         <div style={{ display: "flex", gap: "var(--space-2)" }}>
           <button className="btn btn-ghost" onClick={prevMonth} style={{ padding: "7px 13px", fontSize: 15, lineHeight: 1 }}>
@@ -98,12 +96,16 @@ export default function CalendarView({
         </div>
       </div>
 
+      {runs.length === 0 && (
+        <div className="empty-state" style={{ maxWidth: 680, marginTop: "var(--space-4)" }}>
+          No posts yet — today&apos;s pipeline runs automatically once a day, or trigger it manually
+          against <code>/api/daily-run</code> to see today&apos;s 5 candidates right away.
+        </div>
+      )}
+
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 8, marginTop: "var(--space-5)", maxWidth: 680 }}>
         {WEEKDAY_LABELS.map((wd) => (
-          <div
-            key={wd}
-            style={{ fontSize: 11, color: "var(--color-neutral-500)", textAlign: "center", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }}
-          >
+          <div key={wd} className="eyebrow" style={{ textAlign: "center" }}>
             {wd}
           </div>
         ))}

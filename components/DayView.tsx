@@ -61,24 +61,11 @@ export default function DayView({
   return (
     <>
       <div>
-        <button
-          onClick={onBack}
-          style={{
-            border: "none",
-            background: "transparent",
-            color: "var(--color-accent-300)",
-            cursor: "pointer",
-            fontSize: 12,
-            padding: 0,
-            marginBottom: "var(--space-2)",
-          }}
-        >
+        <button onClick={onBack} className="link-btn" style={{ marginBottom: "var(--space-2)" }}>
           ← Back to Calendar
         </button>
-        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 24, letterSpacing: "-0.01em" }}>{fmtHeader(run.date, today)}</div>
-        <div style={{ fontSize: 13, color: "var(--color-neutral-300)", marginTop: 4 }}>
-          5 candidates from Scout · drafted by Remy · scored &amp; ranked by Val
-        </div>
+        <div className="page-title">{fmtHeader(run.date, today)}</div>
+        <div className="page-subtitle">5 candidates from Scout · drafted by Remy · scored &amp; ranked by Val</div>
       </div>
 
       <div
@@ -157,9 +144,7 @@ export default function DayView({
                     ] as const
                   ).map(([label, value]) => (
                     <div key={label}>
-                      <div style={{ fontSize: 10, color: "var(--color-neutral-500)", textTransform: "uppercase", letterSpacing: "0.04em", fontWeight: 600 }}>
-                        {label}
-                      </div>
+                      <div className="eyebrow-sm">{label}</div>
                       <div style={{ fontSize: 15, fontWeight: 700, color: "var(--color-text)", marginTop: 2 }}>{value}</div>
                       <div className="score-bar-track">
                         <div className="score-bar-fill" style={{ width: `${(value / 10) * 100}%` }} />

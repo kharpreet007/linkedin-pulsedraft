@@ -22,10 +22,8 @@ export default function DashboardView({
   return (
     <>
       <div>
-        <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 24, letterSpacing: "-0.01em" }}>Dashboard</div>
-        <div style={{ fontSize: 13, color: "var(--color-neutral-300)", marginTop: 4 }}>
-          Every post published so far, with its live engagement
-        </div>
+        <div className="page-title">Dashboard</div>
+        <div className="page-subtitle">Every post published so far, with its live engagement</div>
       </div>
 
       <table className="table" style={{ marginTop: "var(--space-4)", width: "100%" }}>
@@ -53,7 +51,7 @@ export default function DashboardView({
       </table>
 
       {postedRuns.length === 0 && (
-        <div style={{ fontSize: 13, color: "var(--color-neutral-400)", marginTop: "var(--space-2)" }}>
+        <div className="empty-state" style={{ marginTop: "var(--space-2)" }}>
           No posts published yet. Pick a winner from the Calendar to see it here.
         </div>
       )}
