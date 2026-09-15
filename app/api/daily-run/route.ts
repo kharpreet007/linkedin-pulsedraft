@@ -1,18 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runDailyPipeline } from "@/lib/pipeline/run";
 import { todayInTimezone, isValidDateKey } from "@/lib/date";
+import { isCronAuthorized } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
 
-function isAuthorized(req: NextRequest): boolean {
-  const secret = process.env.CRON_SECRET;
-  if (!secret) return true; // no secret configured yet — fine for local dev, set one before deploying
-  return req.headers.get("authorization") === `Bearer ${secret}`;
-}
-
 async function handle(req: NextRequest) {
-  if (!isAuthorized(req)) {
+  if (!isCronAuthorized(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
