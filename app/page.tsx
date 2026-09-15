@@ -17,10 +17,13 @@ import {
   updateEngagement,
   fetchTopics,
   createTopic,
-  updateTopic,
   deleteTopic,
+  fetchAssignments,
+  generateAssignments,
+  updateAssignment,
+  deleteAssignment,
 } from "@/lib/api";
-import type { RunSummary, RunDetail, View, Theme, TopicIdea, TopicStatus } from "@/lib/types";
+import type { RunSummary, RunDetail, View, Theme, TopicIdea, TopicAssignment } from "@/lib/types";
 
 export default function Home() {
   const [view, setView] = useState<View>("calendar");
@@ -31,6 +34,7 @@ export default function Home() {
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [topics, setTopics] = useState<TopicIdea[]>([]);
+  const [assignments, setAssignments] = useState<TopicAssignment[]>([]);
 
   const loadRuns = useCallback(() => {
     fetchRuns()
@@ -44,6 +48,12 @@ export default function Home() {
       .catch((e) => setErrorMsg(e instanceof Error ? e.message : "Could not load topics"));
   }, []);
 
+  const loadAssignments = useCallback(() => {
+    fetchAssignments()
+      .then(setAssignments)
+      .catch((e) => setErrorMsg(e instanceof Error ? e.message : "Could not load the topic calendar"));
+  }, []);
+
   useEffect(() => {
     fetch("/api/today")
       .then((r) => r.json())
@@ -51,7 +61,8 @@ export default function Home() {
       .catch(() => {});
     loadRuns();
     loadTopics();
-  }, [loadRuns, loadTopics]);
+    loadAssignments();
+  }, [loadRuns, loadTopics, loadAssignments]);
 
   const selectDate = (date: string) => {
     setSelectedDate(date);
@@ -136,24 +147,32 @@ export default function Home() {
     }
   };
 
-  const handleMoveTopic = async (id: string, status: TopicStatus) => {
-    setTopics((prev) => prev.map((t) => (t.id === id ? { ...t, status } : t)));
+  const handleGenerateCalendar = async (items: { topicId: string; date: string }[]) => {
     try {
-      const updated = await updateTopic(id, { status });
-      setTopics((prev) => prev.map((t) => (t.id === id ? updated : t)));
+      await generateAssignments(items);
+      loadAssignments();
     } catch (e) {
-      setErrorMsg(e instanceof Error ? e.message : "Could not move that topic");
-      loadTopics();
+      setErrorMsg(e instanceof Error ? e.message : "Could not generate the calendar");
     }
   };
 
-  const handleSetTopicDate = async (id: string, date: string) => {
-    setTopics((prev) => prev.map((t) => (t.id === id ? { ...t, scheduledDate: date } : t)));
+  const handleMarkPublished = async (assignmentId: string) => {
+    setAssignments((prev) => prev.map((a) => (a.id === assignmentId ? { ...a, status: "Published" } : a)));
     try {
-      await updateTopic(id, { scheduledDate: date });
+      await updateAssignment(assignmentId, "Published");
     } catch (e) {
-      setErrorMsg(e instanceof Error ? e.message : "Could not update that date");
-      loadTopics();
+      setErrorMsg(e instanceof Error ? e.message : "Could not mark that day published");
+      loadAssignments();
+    }
+  };
+
+  const handleRemoveAssignment = async (assignmentId: string) => {
+    setAssignments((prev) => prev.filter((a) => a.id !== assignmentId));
+    try {
+      await deleteAssignment(assignmentId);
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : "Could not remove that day's topic");
+      loadAssignments();
     }
   };
 
@@ -161,6 +180,7 @@ export default function Home() {
     setTopics((prev) => prev.filter((t) => t.id !== id));
     try {
       await deleteTopic(id);
+      loadAssignments(); // deleting a topic cascades away its assignments too
     } catch (e) {
       setErrorMsg(e instanceof Error ? e.message : "Could not delete that topic");
       loadTopics();
@@ -227,11 +247,13 @@ export default function Home() {
             {view === "kanban" && (
               <KanbanView
                 topics={topics}
+                assignments={assignments}
                 today={today}
                 onCreate={handleCreateTopic}
-                onMove={handleMoveTopic}
-                onSetDate={handleSetTopicDate}
-                onDelete={handleDeleteTopic}
+                onGenerate={handleGenerateCalendar}
+                onMarkPublished={handleMarkPublished}
+                onRemoveAssignment={handleRemoveAssignment}
+                onDeleteTopic={handleDeleteTopic}
               />
             )}
           </>

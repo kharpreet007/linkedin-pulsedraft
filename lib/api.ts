@@ -1,4 +1,4 @@
-import type { RunDetail, RunSummary, Theme, TopicIdea, TopicStatus } from "./types";
+import type { AssignmentStatus, RunDetail, RunSummary, Theme, TopicAssignment, TopicIdea } from "./types";
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -66,17 +66,30 @@ export function createTopic(title: string, theme: Theme): Promise<TopicIdea> {
   }).then((res) => json(res));
 }
 
-export function updateTopic(
-  id: string,
-  patch: { status?: TopicStatus; scheduledDate?: string | null }
-): Promise<TopicIdea> {
-  return fetch(`/api/topics/${id}`, {
-    method: "PATCH",
+export function deleteTopic(id: string): Promise<{ ok: boolean }> {
+  return fetch(`/api/topics/${id}`, { method: "DELETE" }).then((res) => json(res));
+}
+
+export function fetchAssignments(): Promise<TopicAssignment[]> {
+  return fetch("/api/topic-assignments").then((res) => json<TopicAssignment[]>(res));
+}
+
+export function generateAssignments(items: { topicId: string; date: string }[]): Promise<{ created: number }> {
+  return fetch("/api/topic-assignments", {
+    method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(patch),
+    body: JSON.stringify({ assignments: items }),
   }).then((res) => json(res));
 }
 
-export function deleteTopic(id: string): Promise<{ ok: boolean }> {
-  return fetch(`/api/topics/${id}`, { method: "DELETE" }).then((res) => json(res));
+export function updateAssignment(id: string, status: AssignmentStatus): Promise<{ id: string; date: string; status: AssignmentStatus }> {
+  return fetch(`/api/topic-assignments/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  }).then((res) => json(res));
+}
+
+export function deleteAssignment(id: string): Promise<{ ok: boolean }> {
+  return fetch(`/api/topic-assignments/${id}`, { method: "DELETE" }).then((res) => json(res));
 }

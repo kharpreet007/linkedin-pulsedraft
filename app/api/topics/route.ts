@@ -8,15 +8,7 @@ const VALID_THEMES: Theme[] = ["PM", "AI", "Psychology"];
 
 export async function GET() {
   const topics = await prisma.topicIdea.findMany({ orderBy: { createdAt: "asc" } });
-  return NextResponse.json(
-    topics.map((t) => ({
-      id: t.id,
-      title: t.title,
-      theme: t.theme,
-      status: t.status,
-      scheduledDate: t.scheduledDate,
-    }))
-  );
+  return NextResponse.json(topics.map((t) => ({ id: t.id, title: t.title, theme: t.theme })));
 }
 
 export async function POST(req: NextRequest) {
@@ -34,11 +26,5 @@ export async function POST(req: NextRequest) {
     data: { title: title.trim(), theme: theme as Theme },
   });
 
-  return NextResponse.json({
-    id: topic.id,
-    title: topic.title,
-    theme: topic.theme,
-    status: topic.status,
-    scheduledDate: topic.scheduledDate,
-  });
+  return NextResponse.json({ id: topic.id, title: topic.title, theme: topic.theme });
 }

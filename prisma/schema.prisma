@@ -13,8 +13,7 @@ enum Theme {
   Psychology
 }
 
-enum TopicStatus {
-  Backlog
+enum AssignmentStatus {
   Scheduled
   Published
 }
@@ -84,16 +83,29 @@ model Engagement {
   updatedAt   DateTime @updatedAt
 }
 
-/// A manually-curated topic idea on the Kanban planning board. Purely a planning
-/// tool — separate from Scout's own daily brainstorming, never feeds the pipeline.
+/// A manually-curated, reusable topic idea in the Kanban planning pool. Purely a
+/// planning tool — separate from Scout's own daily brainstorming, never feeds the
+/// pipeline. The same idea can appear on many calendar days (see TopicAssignment),
+/// so it carries no date or status of its own.
 model TopicIdea {
-  id            String      @id @default(cuid())
-  title         String
-  theme         Theme
-  status        TopicStatus @default(Backlog)
-  scheduledDate String? // YYYY-MM-DD, set once dragged into Scheduled/Published
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id        String   @id @default(cuid())
+  title     String
+  theme     Theme
+  createdAt DateTime @default(now())
 
-  @@index([status])
+  assignments TopicAssignment[]
+}
+
+/// One calendar day's planned topic on the Kanban board. A single TopicIdea can
+/// have many assignments (e.g. cycling through a small pool across a whole month),
+/// but each date holds at most one assignment.
+model TopicAssignment {
+  id        String           @id @default(cuid())
+  topicId   String
+  topic     TopicIdea        @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  date      String           @unique // YYYY-MM-DD
+  status    AssignmentStatus @default(Scheduled)
+  createdAt DateTime         @default(now())
+
+  @@index([topicId])
 }

@@ -1,18 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { Theme, TopicIdea, TopicStatus } from "@/lib/types";
+import type { Theme, TopicAssignment, TopicIdea } from "@/lib/types";
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
+const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const THEMES: Theme[] = ["PM", "AI", "Psychology"];
-const COLUMNS: { status: TopicStatus; label: string }[] = [
-  { status: "Backlog", label: "Backlog" },
-  { status: "Scheduled", label: "Scheduled" },
-  { status: "Published", label: "Published" },
-];
 
 function themeCardClass(theme: Theme): string {
   if (theme === "PM") return "topic-card topic-card-pm";
@@ -22,40 +18,50 @@ function themeCardClass(theme: Theme): string {
 
 export default function KanbanView({
   topics,
+  assignments,
   today,
   onCreate,
-  onMove,
-  onSetDate,
-  onDelete,
+  onGenerate,
+  onMarkPublished,
+  onRemoveAssignment,
+  onDeleteTopic,
 }: {
   topics: TopicIdea[];
+  assignments: TopicAssignment[];
   today: string;
   onCreate: (title: string, theme: Theme) => void;
-  onMove: (id: string, status: TopicStatus) => void;
-  onSetDate: (id: string, date: string) => void;
-  onDelete: (id: string) => void;
+  onGenerate: (items: { topicId: string; date: string }[]) => void;
+  onMarkPublished: (assignmentId: string) => void;
+  onRemoveAssignment: (assignmentId: string) => void;
+  onDeleteTopic: (topicId: string) => void;
 }) {
   const [todayYear, todayMonth] = today.split("-").map((n) => Number(n));
   const [calYear, setCalYear] = useState(todayYear);
   const [calMonth, setCalMonth] = useState(todayMonth - 1);
   const [title, setTitle] = useState("");
   const [theme, setTheme] = useState<Theme>("PM");
-  const [dragId, setDragId] = useState<string | null>(null);
-  const [dragOverCol, setDragOverCol] = useState<TopicStatus | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const monthKey = `${calYear}-${String(calMonth + 1).padStart(2, "0")}`;
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const startOffset = new Date(calYear, calMonth, 1).getDay();
 
-  const columnTopics = useMemo(() => {
-    const grouped: Record<TopicStatus, TopicIdea[]> = { Backlog: [], Scheduled: [], Published: [] };
-    for (const t of topics) {
-      if (t.status === "Backlog") {
-        grouped.Backlog.push(t);
-      } else if (t.scheduledDate?.startsWith(monthKey)) {
-        grouped[t.status].push(t);
-      }
+  const assignedByDate = useMemo(() => {
+    const map = new Map<string, TopicAssignment>();
+    for (const a of assignments) {
+      if (a.date.startsWith(monthKey)) map.set(a.date, a);
     }
-    return grouped;
-  }, [topics, monthKey]);
+    return map;
+  }, [assignments, monthKey]);
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const prevMonth = () => {
     if (calMonth === 0) {
@@ -81,14 +87,46 @@ export default function KanbanView({
     setTitle("");
   };
 
+  const generateCalendar = () => {
+    const selected = topics.filter((t) => selectedIds.has(t.id));
+    if (selected.length === 0) return;
+
+    const queues: Record<Theme, TopicIdea[]> = { PM: [], AI: [], Psychology: [] };
+    for (const t of selected) queues[t.theme].push(t);
+
+    const cursor: Record<Theme, number> = { PM: 0, AI: 0, Psychology: 0 };
+    const items: { topicId: string; date: string }[] = [];
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      if (assignedByDate.has(dateStr)) continue; // never overwrite an existing day
+
+      const dayTheme = THEMES[(d - 1) % 3];
+      const pool = queues[dayTheme];
+      if (pool.length === 0) continue; // nothing selected for this theme — leave the day empty
+
+      const topic = pool[cursor[dayTheme] % pool.length];
+      cursor[dayTheme] += 1;
+      items.push({ topicId: topic.id, date: dateStr });
+    }
+
+    if (items.length > 0) onGenerate(items);
+  };
+
+  const cells: { day: number | ""; dateStr: string | null }[] = [];
+  for (let i = 0; i < startOffset; i++) cells.push({ day: "", dateStr: null });
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push({ day: d, dateStr: `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}` });
+  }
+
   return (
     <>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div>
           <div className="page-title">Kanban</div>
           <div className="page-subtitle">
-            Plan topic ideas by theme and status — a manual planning board, separate from Scout&apos;s
-            daily brainstorming
+            Pick topics, generate a month of assignments cycling through themes day by day — a manual
+            planning board, separate from Scout&apos;s daily brainstorming
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
@@ -106,102 +144,136 @@ export default function KanbanView({
         </div>
       </div>
 
-      <div style={{ display: "flex", gap: "var(--space-3)", marginTop: "var(--space-4)", maxWidth: 640 }}>
-        <input
-          className="input"
-          type="text"
-          placeholder="New topic idea…"
-          style={{ flex: 1 }}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") submitCreate();
-          }}
-        />
-        <select className="input" value={theme} onChange={(e) => setTheme(e.target.value as Theme)} style={{ width: 130 }}>
-          {THEMES.map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
-        <button className="btn btn-primary" onClick={submitCreate} disabled={!title.trim()}>
-          Add
-        </button>
-      </div>
+      <div style={{ display: "flex", gap: "var(--space-4)", marginTop: "var(--space-4)", alignItems: "flex-start" }}>
+        <div className="kanban-column" style={{ width: 300, flexShrink: 0 }}>
+          <div className="eyebrow" style={{ marginBottom: "var(--space-3)" }}>
+            Topic pool · {topics.length}
+          </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3,1fr)",
-          gap: "var(--space-4)",
-          marginTop: "var(--space-4)",
-          alignItems: "start",
-        }}
-      >
-        {COLUMNS.map((col) => (
-          <div
-            key={col.status}
-            className={`kanban-column${dragOverCol === col.status ? " drag-over" : ""}`}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragOverCol(col.status);
-            }}
-            onDragLeave={() => setDragOverCol((c) => (c === col.status ? null : c))}
-            onDrop={(e) => {
-              e.preventDefault();
-              const id = e.dataTransfer.getData("text/plain");
-              if (id) onMove(id, col.status);
-              setDragOverCol(null);
-              setDragId(null);
-            }}
-          >
-            <div className="eyebrow" style={{ marginBottom: "var(--space-3)" }}>
-              {col.label} · {columnTopics[col.status].length}
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
-              {columnTopics[col.status].map((t) => (
-                <div
-                  key={t.id}
-                  className={themeCardClass(t.theme) + (dragId === t.id ? " dragging" : "")}
-                  draggable
-                  onDragStart={(e) => {
-                    e.dataTransfer.setData("text/plain", t.id);
-                    setDragId(t.id);
-                  }}
-                  onDragEnd={() => setDragId(null)}
-                >
-                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "var(--space-2)" }}>
-                    <span className="tag tag-neutral">{t.theme}</span>
-                    <button
-                      onClick={() => onDelete(t.id)}
-                      className="link-btn"
-                      style={{ fontSize: 14, lineHeight: 1 }}
-                      aria-label={`Delete ${t.title}`}
-                    >
-                      ×
-                    </button>
-                  </div>
-                  <div style={{ fontSize: 13, marginTop: 8, lineHeight: 1.4 }}>{t.title}</div>
-                  {col.status !== "Backlog" && (
-                    <input
-                      type="date"
-                      className="input"
-                      style={{ marginTop: 8, fontSize: 12, padding: "5px 8px" }}
-                      value={t.scheduledDate ?? ""}
-                      onChange={(e) => onSetDate(t.id, e.target.value)}
-                    />
-                  )}
-                </div>
-              ))}
-              {columnTopics[col.status].length === 0 && (
-                <div className="empty-state" style={{ fontSize: 12 }}>
-                  {col.status === "Backlog" ? "No ideas yet — add one above." : "Drag a card here."}
-                </div>
-              )}
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)", marginBottom: "var(--space-3)" }}>
+            <input
+              className="input"
+              type="text"
+              placeholder="New topic idea…"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") submitCreate();
+              }}
+            />
+            <div style={{ display: "flex", gap: "var(--space-2)" }}>
+              <select className="input" value={theme} onChange={(e) => setTheme(e.target.value as Theme)} style={{ flex: 1 }}>
+                {THEMES.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+              <button className="btn btn-primary" onClick={submitCreate} disabled={!title.trim()}>
+                Add
+              </button>
             </div>
           </div>
-        ))}
+
+          <div className="eyebrow-sm" style={{ marginBottom: 6 }}>
+            Select topics, then generate — an idea can be picked again and reused across
+            several days
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)", maxHeight: 320, overflowY: "auto" }}>
+            {topics.map((t) => (
+              <label key={t.id} className={themeCardClass(t.theme)} style={{ display: "flex", gap: 8, alignItems: "flex-start", cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={selectedIds.has(t.id)}
+                  onChange={() => toggleSelected(t.id)}
+                  style={{ marginTop: 3 }}
+                />
+                <div style={{ flex: 1 }}>
+                  <span className="tag tag-neutral">{t.theme}</span>
+                  <div style={{ fontSize: 13, marginTop: 6, lineHeight: 1.4 }}>{t.title}</div>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    onDeleteTopic(t.id);
+                  }}
+                  className="link-btn"
+                  style={{ fontSize: 14, lineHeight: 1 }}
+                  aria-label={`Delete ${t.title}`}
+                >
+                  ×
+                </button>
+              </label>
+            ))}
+            {topics.length === 0 && <div className="empty-state" style={{ fontSize: 12 }}>No ideas yet — add one above.</div>}
+          </div>
+
+          <button
+            className="btn btn-primary"
+            onClick={generateCalendar}
+            disabled={selectedIds.size === 0}
+            style={{ width: "100%", marginTop: "var(--space-3)" }}
+          >
+            Generate {MONTH_NAMES[calMonth]} ({selectedIds.size} selected)
+          </button>
+        </div>
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 6, marginBottom: 6 }}>
+            {WEEKDAY_LABELS.map((wd) => (
+              <div key={wd} className="eyebrow" style={{ textAlign: "center" }}>
+                {wd}
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 6 }}>
+            {cells.map((cell, i) => {
+              const assigned = cell.dateStr ? assignedByDate.get(cell.dateStr) : undefined;
+              return (
+                <div
+                  key={i}
+                  style={{
+                    visibility: cell.day === "" ? "hidden" : "visible",
+                    minHeight: 84,
+                    borderRadius: "var(--radius-md)",
+                    border: assigned ? undefined : "1px solid var(--color-neutral-800)",
+                    padding: 6,
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                  className={assigned ? themeCardClass(assigned.theme) : undefined}
+                >
+                  <div style={{ fontSize: 11, fontWeight: 600, color: "var(--color-neutral-500)" }}>{cell.day}</div>
+                  {assigned && (
+                    <>
+                      <div style={{ fontSize: 11, lineHeight: 1.3, marginTop: 4, flex: 1, overflow: "hidden" }}>{assigned.title}</div>
+                      {assigned.status === "Published" ? (
+                        <span className="tag tag-outline" style={{ fontSize: 9, alignSelf: "flex-start" }}>
+                          Published
+                        </span>
+                      ) : (
+                        <button
+                          className="link-btn"
+                          style={{ fontSize: 10, textAlign: "left" }}
+                          onClick={() => onMarkPublished(assigned.id)}
+                        >
+                          Mark published
+                        </button>
+                      )}
+                      <button
+                        className="link-btn"
+                        style={{ fontSize: 10, textAlign: "left", color: "var(--color-neutral-500)" }}
+                        onClick={() => onRemoveAssignment(assigned.id)}
+                      >
+                        Remove
+                      </button>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </>
   );
