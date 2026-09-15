@@ -14,7 +14,7 @@ export function getGeminiClient(): GoogleGenAI {
 
 // Gemini model names rotate fairly often — override via env if this default 404s.
 // Current list: https://ai.google.dev/gemini-api/docs/models
-export const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+export const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.6-flash";
 
 /**
  * Pulls the last balanced {...} or [...] JSON value out of a model response.

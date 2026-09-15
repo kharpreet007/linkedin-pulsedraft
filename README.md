@@ -40,7 +40,7 @@ Railway's network (Vercel included) can't reach it.
 `GEMINI_API_KEY` — get one at https://aistudio.google.com/apikey. Scout's Google Search grounding
 calls incur their own per-request cost beyond plain generation once you're past the free tier — see
 https://ai.google.dev/gemini-api/docs/pricing. Gemini model names rotate fairly often; if
-`GEMINI_MODEL`'s default (`gemini-2.5-flash`) 404s, check
+`GEMINI_MODEL`'s default (`gemini-3.6-flash`) 404s, check
 https://ai.google.dev/gemini-api/docs/models for the current list.
 
 ## Running the pipeline manually
