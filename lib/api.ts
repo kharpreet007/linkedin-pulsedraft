@@ -18,11 +18,15 @@ export async function fetchRunDetail(date: string): Promise<RunDetail | null> {
   return json<RunDetail>(res);
 }
 
-export function generateRunForDate(date: string, categories: KanbanCategory[]): Promise<RunDetail> {
+export function generateRunForDate(
+  date: string,
+  categories: KanbanCategory[],
+  options: { replace?: boolean } = {}
+): Promise<RunDetail> {
   return fetch(`/api/runs/${date}/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ categories }),
+    body: JSON.stringify({ categories, replace: options.replace ?? false }),
   }).then((res) => json<RunDetail>(res));
 }
 

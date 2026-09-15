@@ -2,11 +2,9 @@
 
 import { useState } from "react";
 import type { KanbanCategory, RunDetail } from "@/lib/types";
-import { KANBAN_CATEGORY_LABELS } from "@/lib/types";
 import { generateRunForDate } from "@/lib/api";
 import { fmtHeader } from "@/lib/format";
-
-const ALL_CATEGORIES = Object.keys(KANBAN_CATEGORY_LABELS) as KanbanCategory[];
+import CategoryPicker from "@/components/CategoryPicker";
 
 export default function GenerateDayView({
   date,
@@ -55,36 +53,8 @@ export default function GenerateDayView({
         <div className="eyebrow" style={{ marginBottom: "var(--space-3)" }}>
           Subjects
         </div>
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))",
-            gap: "var(--space-2)",
-            marginBottom: "var(--space-4)",
-          }}
-        >
-          {ALL_CATEGORIES.map((c) => {
-            const checked = selected.includes(c);
-            return (
-              <label
-                key={c}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  fontSize: 13,
-                  padding: "8px 10px",
-                  borderRadius: "var(--radius-md)",
-                  border: checked ? "1px solid var(--color-accent-600)" : "1px solid var(--color-neutral-800)",
-                  background: checked ? "var(--gradient-brand-soft)" : "var(--color-bg-elevated)",
-                  cursor: loading ? "default" : "pointer",
-                }}
-              >
-                <input type="checkbox" checked={checked} onChange={() => toggle(c)} disabled={loading} />
-                {KANBAN_CATEGORY_LABELS[c]}
-              </label>
-            );
-          })}
+        <div style={{ marginBottom: "var(--space-4)" }}>
+          <CategoryPicker selected={selected} onToggle={toggle} disabled={loading} />
         </div>
 
         {error && <div style={{ fontSize: 13, color: "var(--color-accent-300)", marginBottom: "var(--space-3)" }}>{error}</div>}

@@ -31,8 +31,10 @@ export async function POST(req: NextRequest, { params }: { params: { date: strin
     return NextResponse.json({ error: "categories must be a non-empty array of valid categories" }, { status: 400 });
   }
 
+  const force = body?.replace === true;
+
   try {
-    await runCategoryPipeline(params.date, categories as KanbanCategory[]);
+    await runCategoryPipeline(params.date, categories as KanbanCategory[], { force });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Could not generate posts for that date";
     console.error("category generate failed", err);

@@ -91,16 +91,22 @@ export async function runDailyPipeline(
 /**
  * Same Scout -> Remy -> Val flow as `runDailyPipeline`, but for the Calendar's per-date
  * generation: topics come only from `categories` (the Post Its subject list) instead of the
- * fixed PM/AI/Psychology split, and this is meant to be triggered manually for a date that
- * doesn't have posts yet — unlike `runDailyPipeline`, it throws rather than silently no-op'ing
- * if the date already has candidates, so the caller can tell the user it's not an empty day.
+ * fixed PM/AI/Psychology split. By default this is meant for a date that doesn't have posts
+ * yet — it throws rather than silently no-op'ing if the date already has candidates, so the
+ * caller can tell the user it's not an empty day. Pass `force: true` to deliberately replace an
+ * existing day's candidates instead (e.g. regenerating with different subjects from the day
+ * view) — this also deletes that day's posted selection and engagement, if any.
  */
-export async function runCategoryPipeline(date: string, categories: KanbanCategory[]): Promise<DailyRunResult> {
+export async function runCategoryPipeline(
+  date: string,
+  categories: KanbanCategory[],
+  { force = false }: { force?: boolean } = {}
+): Promise<DailyRunResult> {
   const existing = await prisma.run.findUnique({
     where: { date },
     include: { candidates: true },
   });
-  if (existing && existing.candidates.length > 0) {
+  if (existing && existing.candidates.length > 0 && !force) {
     throw new Error("This date already has generated posts");
   }
 

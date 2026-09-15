@@ -198,7 +198,16 @@ export default function Home() {
               (loadingDetail ? (
                 <DayViewSkeleton />
               ) : runDetail ? (
-                <DayView run={runDetail} today={today} onBack={() => setView("calendar")} onPublish={handlePublish} />
+                <DayView
+                  run={runDetail}
+                  today={today}
+                  onBack={() => setView("calendar")}
+                  onPublish={handlePublish}
+                  onRegenerated={(detail) => {
+                    setRunDetail(detail);
+                    loadRuns();
+                  }}
+                />
               ) : (
                 selectedDate && (
                   <GenerateDayView
