@@ -56,17 +56,32 @@ export type View = "dashboard" | "calendar" | "day" | "analytics" | "generator" 
 
 export type AssignmentStatus = "Scheduled" | "Published";
 
-export interface TopicIdea {
-  id: string;
-  title: string;
-  theme: Theme;
-}
+export type KanbanCategory =
+  | "Business"
+  | "Logistics"
+  | "SupplyChain"
+  | "Transportation"
+  | "ProjectManagement"
+  | "ProductManagement"
+  | "GenAI"
+  | "Psychology"
+  | "Finance";
+
+export const KANBAN_CATEGORY_LABELS: Record<KanbanCategory, string> = {
+  Business: "Business",
+  Logistics: "Logistics",
+  SupplyChain: "Supply Chain",
+  Transportation: "Transportation",
+  ProjectManagement: "Project Management",
+  ProductManagement: "Product Management",
+  GenAI: "Gen-AI",
+  Psychology: "Psychology",
+  Finance: "Finance",
+};
 
 export interface TopicAssignment {
   id: string;
   date: string;
   status: AssignmentStatus;
-  topicId: string;
-  title: string;
-  theme: Theme;
+  category: KanbanCategory;
 }

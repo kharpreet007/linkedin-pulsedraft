@@ -1,4 +1,4 @@
-import type { AssignmentStatus, RunDetail, RunSummary, Theme, TopicAssignment, TopicIdea } from "./types";
+import type { AssignmentStatus, KanbanCategory, RunDetail, RunSummary, Theme, TopicAssignment } from "./types";
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -54,27 +54,11 @@ export function generateDraft(topic: string): Promise<{ draft: string }> {
   }).then((res) => json(res));
 }
 
-export function fetchTopics(): Promise<TopicIdea[]> {
-  return fetch("/api/topics").then((res) => json<TopicIdea[]>(res));
-}
-
-export function createTopic(title: string, theme: Theme): Promise<TopicIdea> {
-  return fetch("/api/topics", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, theme }),
-  }).then((res) => json(res));
-}
-
-export function deleteTopic(id: string): Promise<{ ok: boolean }> {
-  return fetch(`/api/topics/${id}`, { method: "DELETE" }).then((res) => json(res));
-}
-
 export function fetchAssignments(): Promise<TopicAssignment[]> {
   return fetch("/api/topic-assignments").then((res) => json<TopicAssignment[]>(res));
 }
 
-export function generateAssignments(items: { topicId: string; date: string }[]): Promise<{ created: number }> {
+export function generateAssignments(items: { category: KanbanCategory; date: string }[]): Promise<{ created: number }> {
   return fetch("/api/topic-assignments", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

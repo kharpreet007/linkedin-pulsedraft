@@ -17,9 +17,6 @@
   --color-accent-700: #6939c9;
   --color-accent-900: #251c47;
 
-  --color-pink: #f472b6;
-  --color-blue: #60a5fa;
-
   --gradient-brand: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 45%, #f472b6 100%);
   --gradient-brand-soft: linear-gradient(135deg, rgba(139, 92, 246, 0.16) 0%, rgba(244, 114, 182, 0.12) 100%);
   --gradient-bg: radial-gradient(1100px 620px at 12% -8%, rgba(139, 92, 246, 0.16), transparent 60%),
@@ -380,24 +377,13 @@ a:hover {
   text-decoration: underline;
 }
 
-/* Kanban topic board — theme-tinted card washes (never a flood fill, ~10% opacity) */
+/* Kanban topic board */
 .topic-card {
+  background: var(--color-bg-elevated);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-neutral-700);
   padding: var(--space-3);
   transition: border-color 0.12s ease, box-shadow 0.12s ease;
-}
-.topic-card-pm {
-  background: rgba(96, 165, 250, 0.1);
-  border-color: rgba(96, 165, 250, 0.3);
-}
-.topic-card-ai {
-  background: rgba(167, 139, 250, 0.1);
-  border-color: rgba(167, 139, 250, 0.3);
-}
-.topic-card-psychology {
-  background: rgba(244, 114, 182, 0.1);
-  border-color: rgba(244, 114, 182, 0.3);
 }
 
 .kanban-column {

@@ -15,15 +15,12 @@ import {
   publishCandidate,
   updateSelection,
   updateEngagement,
-  fetchTopics,
-  createTopic,
-  deleteTopic,
   fetchAssignments,
   generateAssignments,
   updateAssignment,
   deleteAssignment,
 } from "@/lib/api";
-import type { RunSummary, RunDetail, View, Theme, TopicIdea, TopicAssignment } from "@/lib/types";
+import type { RunSummary, RunDetail, View, Theme, KanbanCategory, TopicAssignment } from "@/lib/types";
 
 export default function Home() {
   const [view, setView] = useState<View>("calendar");
@@ -33,19 +30,12 @@ export default function Home() {
   const [runDetail, setRunDetail] = useState<RunDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [topics, setTopics] = useState<TopicIdea[]>([]);
   const [assignments, setAssignments] = useState<TopicAssignment[]>([]);
 
   const loadRuns = useCallback(() => {
     fetchRuns()
       .then(setRuns)
       .catch((e) => setErrorMsg(e instanceof Error ? e.message : "Could not load runs"));
-  }, []);
-
-  const loadTopics = useCallback(() => {
-    fetchTopics()
-      .then(setTopics)
-      .catch((e) => setErrorMsg(e instanceof Error ? e.message : "Could not load topics"));
   }, []);
 
   const loadAssignments = useCallback(() => {
@@ -60,9 +50,8 @@ export default function Home() {
       .then((d) => setToday(d.date))
       .catch(() => {});
     loadRuns();
-    loadTopics();
     loadAssignments();
-  }, [loadRuns, loadTopics, loadAssignments]);
+  }, [loadRuns, loadAssignments]);
 
   const selectDate = (date: string) => {
     setSelectedDate(date);
@@ -138,16 +127,7 @@ export default function Home() {
     }
   };
 
-  const handleCreateTopic = async (title: string, theme: Theme) => {
-    try {
-      const created = await createTopic(title, theme);
-      setTopics((prev) => [...prev, created]);
-    } catch (e) {
-      setErrorMsg(e instanceof Error ? e.message : "Could not add that topic");
-    }
-  };
-
-  const handleGenerateCalendar = async (items: { topicId: string; date: string }[]) => {
+  const handleGenerateCalendar = async (items: { category: KanbanCategory; date: string }[]) => {
     try {
       await generateAssignments(items);
       loadAssignments();
@@ -173,17 +153,6 @@ export default function Home() {
     } catch (e) {
       setErrorMsg(e instanceof Error ? e.message : "Could not remove that day's topic");
       loadAssignments();
-    }
-  };
-
-  const handleDeleteTopic = async (id: string) => {
-    setTopics((prev) => prev.filter((t) => t.id !== id));
-    try {
-      await deleteTopic(id);
-      loadAssignments(); // deleting a topic cascades away its assignments too
-    } catch (e) {
-      setErrorMsg(e instanceof Error ? e.message : "Could not delete that topic");
-      loadTopics();
     }
   };
 
@@ -246,14 +215,11 @@ export default function Home() {
             {view === "generator" && <GeneratorView />}
             {view === "kanban" && (
               <KanbanView
-                topics={topics}
                 assignments={assignments}
                 today={today}
-                onCreate={handleCreateTopic}
                 onGenerate={handleGenerateCalendar}
                 onMarkPublished={handleMarkPublished}
                 onRemoveAssignment={handleRemoveAssignment}
-                onDeleteTopic={handleDeleteTopic}
               />
             )}
           </>
