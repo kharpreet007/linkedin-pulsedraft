@@ -1,6 +1,5 @@
 import { Type } from "@google/genai";
 import { getGeminiClient, GEMINI_MODEL } from "@/lib/gemini";
-import { fetchTrendingRedditThreads } from "./reddit";
 import type { Theme } from "@prisma/client";
 
 export interface ScoutTopic {
@@ -10,35 +9,22 @@ export interface ScoutTopic {
 
 const SYSTEM_PROMPT = `You are Scout, a research analyst for a LinkedIn content pipeline aimed at
 product managers, AI practitioners, and people interested in workplace/user psychology.
-Your job is to turn real, currently-trending Reddit discussions into sharp LinkedIn post topics —
-not generic advice topics.`;
+Your job is to brainstorm what's genuinely worth discussing right now — not generic advice topics.`;
 
-function buildPrompt(threads: { theme: Theme; subreddit: string; title: string }[]): string {
-  const listing = threads
-    .map((t) => `[${t.theme}] r/${t.subreddit}: "${t.title}"`)
-    .join("\n");
+const USER_PROMPT = `Brainstorm discussion topics across three areas: product management,
+applied/practical AI, and user or workplace psychology. Think about real complaints, debates, or
+observations people in these fields tend to have — not press releases or generic "top tips" content.
 
-  return `Here are real threads currently hot on Reddit across product management, AI, and
-workplace/user psychology:
-
-${listing}
-
-From these, produce exactly 5 candidate topics for today's LinkedIn post. Each topic must be
-grounded in one of the threads above (don't invent unrelated ideas), phrased as a specific, punchy
-post idea rather than the raw thread title. Spread the 5 across the three themes (a mix, not all
-one theme).`;
-}
+Produce exactly 5 candidate topics for today's LinkedIn post, each phrased as a specific, punchy
+post idea grounded in a concrete scenario rather than an abstract concept. Spread them across the
+three themes (a mix, not all one theme).`;
 
 export async function runScout(): Promise<ScoutTopic[]> {
-  const threads = await fetchTrendingRedditThreads();
-  if (threads.length === 0) {
-    throw new Error("Reddit returned no threads to scout from");
-  }
-
   const ai = getGeminiClient();
+
   const response = await ai.models.generateContent({
     model: GEMINI_MODEL,
-    contents: buildPrompt(threads),
+    contents: USER_PROMPT,
     config: {
       systemInstruction: SYSTEM_PROMPT,
       responseMimeType: "application/json",
