@@ -7,7 +7,7 @@ import CalendarView from "@/components/CalendarView";
 import DayView from "@/components/DayView";
 import AnalyticsView from "@/components/AnalyticsView";
 import GeneratorView from "@/components/GeneratorView";
-import KanbanView from "@/components/KanbanView";
+import PostItsView from "@/components/PostItsView";
 import { CalendarSkeleton, DayViewSkeleton } from "@/components/Skeleton";
 import {
   fetchRuns,
@@ -17,7 +17,6 @@ import {
   updateEngagement,
   fetchAssignments,
   generateAssignments,
-  updateAssignment,
   deleteAssignment,
 } from "@/lib/api";
 import type { RunSummary, RunDetail, View, Theme, KanbanCategory, TopicAssignment } from "@/lib/types";
@@ -136,16 +135,6 @@ export default function Home() {
     }
   };
 
-  const handleMarkPublished = async (assignmentId: string) => {
-    setAssignments((prev) => prev.map((a) => (a.id === assignmentId ? { ...a, status: "Published" } : a)));
-    try {
-      await updateAssignment(assignmentId, "Published");
-    } catch (e) {
-      setErrorMsg(e instanceof Error ? e.message : "Could not mark that day published");
-      loadAssignments();
-    }
-  };
-
   const handleRemoveAssignment = async (assignmentId: string) => {
     setAssignments((prev) => prev.filter((a) => a.id !== assignmentId));
     try {
@@ -212,12 +201,11 @@ export default function Home() {
               ))}
             {view === "analytics" && <AnalyticsView runs={runs} today={today} />}
             {view === "generator" && <GeneratorView />}
-            {view === "kanban" && (
-              <KanbanView
+            {view === "postits" && (
+              <PostItsView
                 assignments={assignments}
                 today={today}
                 onAssign={handleAssignDay}
-                onMarkPublished={handleMarkPublished}
                 onRemoveAssignment={handleRemoveAssignment}
               />
             )}

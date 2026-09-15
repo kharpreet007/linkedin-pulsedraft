@@ -11,17 +11,15 @@ const MONTH_NAMES = [
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const ALL_CATEGORIES = Object.keys(KANBAN_CATEGORY_LABELS) as KanbanCategory[];
 
-export default function KanbanView({
+export default function PostItsView({
   assignments,
   today,
   onAssign,
-  onMarkPublished,
   onRemoveAssignment,
 }: {
   assignments: TopicAssignment[];
   today: string;
   onAssign: (category: KanbanCategory, date: string) => void;
-  onMarkPublished: (assignmentId: string) => void;
   onRemoveAssignment: (assignmentId: string) => void;
 }) {
   const [todayYear, todayMonth] = today.split("-").map((n) => Number(n));
@@ -68,7 +66,7 @@ export default function KanbanView({
     <>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-3)", alignItems: "center", justifyContent: "space-between" }}>
         <div>
-          <div className="page-title">Kanban</div>
+          <div className="page-title">Post Its</div>
           <div className="page-subtitle">Drag a category onto a day to assign it there</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: "var(--space-3)" }}>
@@ -87,7 +85,7 @@ export default function KanbanView({
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: "var(--space-4)", marginTop: "var(--space-4)", alignItems: "flex-start" }}>
-        <div className="kanban-column" style={{ flex: "1 1 200px", maxWidth: 240, minWidth: 0 }}>
+        <div className="postits-column" style={{ flex: "1 1 200px", maxWidth: 240, minWidth: 0 }}>
           <div className="eyebrow" style={{ marginBottom: "var(--space-3)" }}>
             Categories
           </div>
@@ -156,22 +154,9 @@ export default function KanbanView({
                       <span className="tag tag-neutral" style={{ marginTop: 4, alignSelf: "flex-start", fontSize: 10 }}>
                         {KANBAN_CATEGORY_LABELS[assigned.category]}
                       </span>
-                      {assigned.status === "Published" ? (
-                        <span className="tag tag-outline" style={{ fontSize: 9, alignSelf: "flex-start", marginTop: 4 }}>
-                          Published
-                        </span>
-                      ) : (
-                        <button
-                          className="link-btn"
-                          style={{ fontSize: 10, textAlign: "left", marginTop: 4 }}
-                          onClick={() => onMarkPublished(assigned.id)}
-                        >
-                          Mark published
-                        </button>
-                      )}
                       <button
                         className="link-btn"
-                        style={{ fontSize: 10, textAlign: "left", color: "var(--color-neutral-500)" }}
+                        style={{ fontSize: 10, textAlign: "left", color: "var(--color-neutral-500)", marginTop: 4 }}
                         onClick={() => onRemoveAssignment(assigned.id)}
                       >
                         Remove

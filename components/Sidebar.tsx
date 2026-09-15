@@ -42,7 +42,7 @@ const ICONS: Record<View, JSX.Element> = {
       <rect x="11.5" y="9.5" width="2" height="2.5" rx="0.6" fill="currentColor" />
     </svg>
   ),
-  kanban: (
+  postits: (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
       <rect x="1.5" y="2" width="13" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
       <path d="M5.5 2v12M10.5 2v12" stroke="currentColor" strokeWidth="1.3" />
@@ -53,7 +53,7 @@ const ICONS: Record<View, JSX.Element> = {
 const NAV_ITEMS: { view: View; label: string }[] = [
   { view: "dashboard", label: "Dashboard" },
   { view: "calendar", label: "Calendar" },
-  { view: "kanban", label: "Kanban" },
+  { view: "postits", label: "Post Its" },
   { view: "generator", label: "Post Generator" },
   { view: "analytics", label: "Analytics" },
 ];

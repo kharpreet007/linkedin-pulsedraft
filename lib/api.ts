@@ -1,4 +1,4 @@
-import type { AssignmentStatus, KanbanCategory, RunDetail, RunSummary, Theme, TopicAssignment } from "./types";
+import type { KanbanCategory, RunDetail, RunSummary, Theme, TopicAssignment } from "./types";
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -63,14 +63,6 @@ export function generateAssignments(items: { category: KanbanCategory; date: str
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ assignments: items }),
-  }).then((res) => json(res));
-}
-
-export function updateAssignment(id: string, status: AssignmentStatus): Promise<{ id: string; date: string; status: AssignmentStatus }> {
-  return fetch(`/api/topic-assignments/${id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ status }),
   }).then((res) => json(res));
 }
 
