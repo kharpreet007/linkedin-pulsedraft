@@ -57,7 +57,7 @@ export default function GenerateDayView({
           <CategoryPicker selected={selected} onToggle={toggle} disabled={loading} />
         </div>
 
-        {error && <div style={{ fontSize: 13, color: "var(--color-accent-300)", marginBottom: "var(--space-3)" }}>{error}</div>}
+        {error && <div style={{ fontSize: 13, color: "var(--color-danger)", marginBottom: "var(--space-3)" }}>{error}</div>}
 
         <button className="btn btn-primary" onClick={handleGenerate} disabled={selected.length === 0 || loading}>
           {loading

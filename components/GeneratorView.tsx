@@ -80,7 +80,7 @@ export default function GeneratorView() {
         </button>
       </div>
 
-      {error && <div style={{ fontSize: 13, color: "var(--color-accent-300)", marginTop: "var(--space-2)" }}>{error}</div>}
+      {error && <div style={{ fontSize: 13, color: "var(--color-danger)", marginTop: "var(--space-2)" }}>{error}</div>}
 
       {draft && (
         <div className="card" style={{ maxWidth: 640, marginTop: "var(--space-4)" }}>

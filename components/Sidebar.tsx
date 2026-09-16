@@ -88,7 +88,7 @@ export default function Sidebar({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            boxShadow: "0 4px 14px rgba(139, 92, 246, 0.4)",
+            boxShadow: "0 4px 14px rgba(10, 102, 194, 0.25)",
             flexShrink: 0,
           }}
         >

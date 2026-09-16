@@ -156,7 +156,6 @@ export default function CalendarView({
                   position: "absolute",
                   bottom: 7,
                   right: 7,
-                  boxShadow: "0 0 8px rgba(167, 139, 250, 0.8)",
                 }}
               />
             )}

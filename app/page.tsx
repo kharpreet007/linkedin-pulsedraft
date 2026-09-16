@@ -170,8 +170,9 @@ export default function Home() {
           <div
             style={{
               fontSize: 13,
-              color: "var(--color-accent-300)",
-              border: "1px solid var(--color-accent-600)",
+              color: "var(--color-danger)",
+              border: "1px solid var(--color-danger)",
+              background: "var(--color-danger-soft)",
               borderRadius: "var(--radius-md)",
               padding: "var(--space-2) var(--space-3)",
             }}

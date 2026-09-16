@@ -125,7 +125,7 @@ export default function DayView({
             </div>
 
             {regenError && (
-              <div style={{ fontSize: 13, color: "var(--color-accent-300)", marginBottom: "var(--space-3)" }}>{regenError}</div>
+              <div style={{ fontSize: 13, color: "var(--color-danger)", marginBottom: "var(--space-3)" }}>{regenError}</div>
             )}
 
             <div style={{ display: "flex", gap: "var(--space-2)" }}>
@@ -177,9 +177,9 @@ export default function DayView({
               key={c.id}
               className="card"
               style={{
-                border: isTopPick ? "1px solid rgba(167, 139, 250, 0.5)" : "1px solid var(--color-neutral-700)",
+                border: isTopPick ? "1px solid var(--color-accent-500)" : "1px solid var(--color-neutral-700)",
                 background: isTopPick
-                  ? "linear-gradient(180deg, rgba(139, 92, 246, 0.08), rgba(255,255,255,0)), var(--color-bg-elevated)"
+                  ? "linear-gradient(180deg, rgba(10, 102, 194, 0.06), rgba(255,255,255,0)), var(--color-bg-elevated)"
                   : undefined,
                 boxShadow: isTopPick ? "var(--shadow-glow)" : "none",
                 display: "flex",
