@@ -1,6 +1,7 @@
 "use client";
 
 import type { View } from "@/lib/types";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const ICONS: Record<View, JSX.Element> = {
   dashboard: (
@@ -70,7 +71,8 @@ export default function Sidebar({
       style={{
         width: 248,
         flexShrink: 0,
-        borderRight: "1px solid var(--color-neutral-800)",
+        background: "var(--color-neutral-800)",
+        borderRight: "1px solid var(--color-neutral-700)",
         padding: "var(--space-5) var(--space-4)",
         overflowY: "auto",
         display: "flex",
@@ -116,6 +118,10 @@ export default function Sidebar({
             </button>
           );
         })}
+      </div>
+
+      <div style={{ marginTop: "auto" }}>
+        <ThemeToggle />
       </div>
     </aside>
   );

@@ -10,9 +10,21 @@ export const metadata: Metadata = {
   description: "Daily Scout → Remy → Val content pipeline for LinkedIn posts.",
 };
 
+const THEME_INIT_SCRIPT = `
+(function () {
+  try {
+    var theme = localStorage.getItem("pulsedraft-theme");
+    if (theme === "dark") document.documentElement.setAttribute("data-theme", "dark");
+  } catch (e) {}
+})();
+`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${sora.variable}`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body>{children}</body>
     </html>
   );
