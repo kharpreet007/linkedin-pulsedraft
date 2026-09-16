@@ -78,7 +78,11 @@ export default function WeeklyPostRateChart({ weeks, baseline }: { weeks: Weekly
         {weeks.map((w, i) => {
           const x = PAD_LEFT + i * barWidth;
           const barH = HEIGHT - PAD_BOTTOM - yScale(w.count);
-          const showLabel = weeks.length <= 6 || i % 2 === 0;
+          const isFirst = i === 0;
+          const isLast = i === weeks.length - 1;
+          const showLabel = isFirst || isLast || weeks.length <= 6 || i % 2 === 0;
+          const anchor = isFirst ? "start" : isLast ? "end" : "middle";
+          const labelX = isFirst ? x : isLast ? x + barWidth : x + barWidth / 2;
           return (
             <g key={w.weekStart}>
               <rect
@@ -101,7 +105,7 @@ export default function WeeklyPostRateChart({ weeks, baseline }: { weeks: Weekly
                 onMouseLeave={() => setHovered(null)}
               />
               {showLabel && (
-                <text x={x + barWidth / 2} y={HEIGHT - PAD_BOTTOM + 14} textAnchor="middle" fontSize={9} fill="var(--color-neutral-500)">
+                <text x={labelX} y={HEIGHT - PAD_BOTTOM + 14} textAnchor={anchor} fontSize={9} fill="var(--color-neutral-500)">
                   {fmtWeek(w.weekStart)}
                 </text>
               )}

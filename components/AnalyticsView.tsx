@@ -222,25 +222,7 @@ export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; tod
             {scoreCorrelation !== null ? `r = ${scoreCorrelation.toFixed(2)} — ` : ""}
             {correlationLabel(scoreCorrelation, scoreVsResultRows.length)}
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
-            {scoreVsResultRows.map((r, i) => (
-              <div key={i} style={{ border: "1px solid var(--color-neutral-800)", borderRadius: "var(--radius-md)", padding: "var(--space-3)" }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "var(--space-2)" }}>
-                  <span style={{ fontSize: 13, fontWeight: 500 }}>{r.topic}</span>
-                  <span className="tag tag-accent">{r.score}/50</span>
-                </div>
-                <div style={{ fontSize: 12, color: "var(--color-neutral-400)", marginTop: 2 }}>{r.date}</div>
-                <div style={{ display: "flex", gap: "var(--space-4)", marginTop: "var(--space-2)", fontSize: 13, color: "var(--color-neutral-300)" }}>
-                  <span>{r.impressions} impressions</span>
-                  <span>{r.likes} likes</span>
-                  <span>{r.comments} comments</span>
-                </div>
-              </div>
-            ))}
-            {scoreVsResultRows.length === 0 && (
-              <div className="empty-state">No published posts yet.</div>
-            )}
-          </div>
+          {scoreVsResultRows.length === 0 && <div className="empty-state">No published posts yet.</div>}
         </div>
 
         <div className="card">
