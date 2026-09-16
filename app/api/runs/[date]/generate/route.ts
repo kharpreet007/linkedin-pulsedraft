@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { runCategoryPipeline } from "@/lib/pipeline/run";
 import { serializeRunDetail } from "@/lib/serialize";
 import { isValidDateKey } from "@/lib/date";
+import { friendlyGeminiError } from "@/lib/gemini";
 import type { KanbanCategory } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
@@ -36,9 +37,13 @@ export async function POST(req: NextRequest, { params }: { params: { date: strin
   try {
     await runCategoryPipeline(params.date, categories as KanbanCategory[], { force });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Could not generate posts for that date";
     console.error("category generate failed", err);
-    return NextResponse.json({ error: message }, { status: message.includes("already has") ? 409 : 500 });
+    const rawMessage = err instanceof Error ? err.message : "Could not generate posts for that date";
+    const isConflict = rawMessage.includes("already has");
+    return NextResponse.json(
+      { error: isConflict ? rawMessage : friendlyGeminiError(err) },
+      { status: isConflict ? 409 : 500 }
+    );
   }
 
   const run = await prisma.run.findUnique({

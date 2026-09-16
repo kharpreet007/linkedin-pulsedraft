@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { runDailyPipeline } from "@/lib/pipeline/run";
 import { todayInTimezone, isValidDateKey } from "@/lib/date";
 import { isCronAuthorized } from "@/lib/auth";
+import { friendlyGeminiError } from "@/lib/gemini";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -21,10 +22,7 @@ async function handle(req: NextRequest) {
     return NextResponse.json(result);
   } catch (err) {
     console.error("daily-run failed", err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Pipeline failed" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: friendlyGeminiError(err) }, { status: 500 });
   }
 }
 

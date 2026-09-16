@@ -1,5 +1,5 @@
 import { Type } from "@google/genai";
-import { getGeminiClient, GEMINI_MODEL, extractJson } from "@/lib/gemini";
+import { getGeminiClient, GEMINI_MODEL, extractJson, generateContentWithRetry } from "@/lib/gemini";
 
 export interface ValCandidateInput {
   index: number;
@@ -33,7 +33,7 @@ ${candidates
 Return a JSON array with exactly ${candidates.length} objects, one per draft, in this shape:
 [{"index": number, "hook": number, "insight": number, "authenticity": number, "engagement": number, "clarity": number}, ...]`;
 
-  const response = await ai.models.generateContent({
+  const response = await generateContentWithRetry(ai, {
     model: GEMINI_MODEL,
     contents: prompt,
     config: {

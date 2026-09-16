@@ -1,5 +1,5 @@
 import { Type } from "@google/genai";
-import { getGeminiClient, GEMINI_MODEL } from "@/lib/gemini";
+import { getGeminiClient, GEMINI_MODEL, generateContentWithRetry } from "@/lib/gemini";
 import type { Theme, KanbanCategory } from "@prisma/client";
 import { KANBAN_CATEGORY_LABELS } from "@/lib/types";
 
@@ -28,7 +28,7 @@ three themes (a mix, not all one theme).`;
 export async function runScout(): Promise<ScoutTopic[]> {
   const ai = getGeminiClient();
 
-  const response = await ai.models.generateContent({
+  const response = await generateContentWithRetry(ai, {
     model: GEMINI_MODEL,
     contents: USER_PROMPT,
     config: {
@@ -94,7 +94,7 @@ Produce exactly 5 candidate topics for today's LinkedIn post, each phrased as a 
 post idea grounded in a concrete scenario rather than an abstract concept. Spread them across the
 given subject areas as evenly as makes sense (repeat an area if there are fewer than 5 areas).`;
 
-  const response = await ai.models.generateContent({
+  const response = await generateContentWithRetry(ai, {
     model: GEMINI_MODEL,
     contents: userPrompt,
     config: {

@@ -1,4 +1,4 @@
-import { getGeminiClient, GEMINI_MODEL } from "@/lib/gemini";
+import { getGeminiClient, GEMINI_MODEL, generateContentWithRetry } from "@/lib/gemini";
 
 /** Same style rules as the original Post Generator prompt — kept in one place so the daily
  *  pipeline and the ad-hoc /api/generate endpoint never drift apart. */
@@ -18,7 +18,7 @@ export function buildRemyPrompt(topic: string): string {
 export async function runRemy(topic: string): Promise<string> {
   const ai = getGeminiClient();
 
-  const response = await ai.models.generateContent({
+  const response = await generateContentWithRetry(ai, {
     model: GEMINI_MODEL,
     contents: buildRemyPrompt(topic),
   });
