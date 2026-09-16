@@ -30,6 +30,7 @@ export async function GET() {
                 ? KANBAN_CATEGORY_LABELS[run.postedSelection.candidate.category]
                 : "—"),
             scoreTotal: run.postedSelection.candidate.score?.total ?? null,
+            rank: run.postedSelection.candidate.rank,
             postedAt: run.postedSelection.postedAt.toISOString(),
           }
         : null,

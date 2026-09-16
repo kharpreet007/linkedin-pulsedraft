@@ -83,3 +83,15 @@ export function generateAssignments(items: { category: KanbanCategory; date: str
 export function deleteAssignment(id: string): Promise<{ ok: boolean }> {
   return fetch(`/api/topic-assignments/${id}`, { method: "DELETE" }).then((res) => json(res));
 }
+
+export function fetchBaselineRate(): Promise<{ postsPerWeek: number | null }> {
+  return fetch("/api/settings/baseline-rate").then((res) => json(res));
+}
+
+export function updateBaselineRate(postsPerWeek: number): Promise<{ postsPerWeek: number }> {
+  return fetch("/api/settings/baseline-rate", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ postsPerWeek }),
+  }).then((res) => json(res));
+}

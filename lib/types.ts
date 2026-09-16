@@ -9,6 +9,7 @@ export interface RunSummary {
     topic: string;
     theme: string;
     scoreTotal: number | null;
+    rank: number | null;
     postedAt: string;
   } | null;
   engagement: {

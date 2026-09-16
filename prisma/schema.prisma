@@ -112,3 +112,10 @@ model TopicAssignment {
   status    AssignmentStatus @default(Scheduled)
   createdAt DateTime         @default(now())
 }
+
+/// Generic single-value settings the app needs to remember but that don't warrant
+/// their own table — e.g. the user's pre-tool posting baseline for Analytics.
+model Setting {
+  key   String @id
+  value String
+}
