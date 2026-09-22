@@ -46,16 +46,21 @@ model Run {
 
 /// One of the day's 5 Scout topics, expanded by Remy into a full draft. Either `theme` (the
 /// automatic daily pipeline's PM/AI/Psychology split) or `category` (a manually chosen Post Its
-/// subject, used when generating for a specific calendar date) is set, never both.
+/// subject, used when generating for a specific calendar date) is set, never both. `sourceUrl`/
+/// `sourceTitle` are set only when the topic was grounded in a real web article (e.g. an ingested
+/// candidate from a web-search-backed generation) — null for anything drafted from general
+/// knowledge, including every automatic daily-pipeline candidate.
 model Candidate {
-  id       String          @id @default(cuid())
-  runId    String
-  run      Run             @relation(fields: [runId], references: [id], onDelete: Cascade)
-  topic    String
-  theme    Theme?
-  category KanbanCategory?
-  draft    String          @db.Text
-  rank     Int? // 1-5, set once Val has scored & ranked all candidates for the run
+  id          String          @id @default(cuid())
+  runId       String
+  run         Run             @relation(fields: [runId], references: [id], onDelete: Cascade)
+  topic       String
+  theme       Theme?
+  category    KanbanCategory?
+  draft       String          @db.Text
+  rank        Int? // 1-5, set once Val has scored & ranked all candidates for the run
+  sourceUrl   String?
+  sourceTitle String?
 
   score           Score?
   postedSelection PostedSelection?

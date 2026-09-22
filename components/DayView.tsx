@@ -133,6 +133,18 @@ export default function DayView({
                 {c.draft}
               </div>
 
+              {c.sourceUrl && (
+                <a
+                  href={c.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="link-btn"
+                  style={{ fontSize: 12, marginBottom: "var(--space-3)", display: "inline-block" }}
+                >
+                  ↗ {c.sourceTitle ? `Source: ${c.sourceTitle}` : "Read the source article"}
+                </a>
+              )}
+
               <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 4, marginBottom: "var(--space-3)", textAlign: "center" }}>
                 {c.score &&
                   (

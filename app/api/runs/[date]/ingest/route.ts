@@ -34,6 +34,14 @@ function parseCandidate(raw: unknown, index: number): RankedCandidateInput {
     throw new Error(`Candidate ${index}: category must be one of ${VALID_CATEGORIES.join(", ")}`);
   }
   if (c.theme && c.category) throw new Error(`Candidate ${index}: set theme or category, not both`);
+  if (c.sourceUrl !== undefined && c.sourceUrl !== null) {
+    if (typeof c.sourceUrl !== "string" || !/^https?:\/\//.test(c.sourceUrl)) {
+      throw new Error(`Candidate ${index}: sourceUrl must be an http(s) URL`);
+    }
+  }
+  if (c.sourceTitle !== undefined && c.sourceTitle !== null && typeof c.sourceTitle !== "string") {
+    throw new Error(`Candidate ${index}: sourceTitle must be a string`);
+  }
 
   const score = c.score as Record<string, unknown> | undefined;
   if (!score || typeof score !== "object") throw new Error(`Candidate ${index}: score is required`);
@@ -51,6 +59,8 @@ function parseCandidate(raw: unknown, index: number): RankedCandidateInput {
     draft: c.draft.trim(),
     theme: (c.theme as Theme | undefined) ?? null,
     category: (c.category as KanbanCategory | undefined) ?? null,
+    sourceUrl: (c.sourceUrl as string | undefined)?.trim() ?? null,
+    sourceTitle: (c.sourceTitle as string | undefined)?.trim() ?? null,
     score: parsedScore as RankedCandidateInput["score"],
   };
 }

@@ -18,6 +18,8 @@ export function serializeRunDetail(run: RunWithRelations) {
         theme: c.theme,
         category: c.category,
         draft: c.draft,
+        sourceUrl: c.sourceUrl,
+        sourceTitle: c.sourceTitle,
         rank: c.rank,
         score: c.score
           ? {

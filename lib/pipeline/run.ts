@@ -18,6 +18,8 @@ export interface RankedCandidateInput {
   theme?: Theme | null;
   category?: KanbanCategory | null;
   draft: string;
+  sourceUrl?: string | null;
+  sourceTitle?: string | null;
   score: {
     hook: number;
     insight: number;
@@ -68,6 +70,8 @@ export async function persistRankedRun(
           theme: c.theme ?? null,
           category: c.category ?? null,
           draft: c.draft,
+          sourceUrl: c.sourceUrl ?? null,
+          sourceTitle: c.sourceTitle ?? null,
           rank: c.rank,
           score: {
             create: {

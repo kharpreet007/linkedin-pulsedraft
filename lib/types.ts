@@ -34,6 +34,8 @@ export interface Candidate {
   theme: Theme | null;
   category: KanbanCategory | null;
   draft: string;
+  sourceUrl: string | null;
+  sourceTitle: string | null;
   rank: number | null;
   score: CandidateScore | null;
 }
