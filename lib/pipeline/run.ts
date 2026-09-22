@@ -2,7 +2,7 @@ import { prisma } from "@/lib/db";
 import { runScout, runScoutByCategories } from "./scout";
 import { runRemy } from "./remy";
 import { runVal } from "./val";
-import type { KanbanCategory } from "@prisma/client";
+import type { KanbanCategory, Theme } from "@prisma/client";
 
 export interface DailyRunResult {
   date: string;
@@ -12,6 +12,80 @@ export interface DailyRunResult {
 // Spaces out Gemini calls to stay under low per-minute rate limits on free-tier API keys.
 const GEMINI_CALL_GAP_MS = 3000;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+export interface RankedCandidateInput {
+  topic: string;
+  theme?: Theme | null;
+  category?: KanbanCategory | null;
+  draft: string;
+  score: {
+    hook: number;
+    insight: number;
+    authenticity: number;
+    engagement: number;
+    clarity: number;
+  };
+}
+
+/**
+ * Shared persistence step for all three ways a day's 5 candidates get created (the automatic
+ * daily pipeline, the Calendar's category-picker generation, and the manual ingest endpoint):
+ * ranks by total score and writes the Run/Candidate/Score rows. Throws if the date already has
+ * candidates, unless `force` is set (which replaces them, cascading away any posted
+ * selection/engagement — only for a deliberate redo).
+ */
+export async function persistRankedRun(
+  date: string,
+  candidates: RankedCandidateInput[],
+  { force = false }: { force?: boolean } = {}
+): Promise<DailyRunResult> {
+  const existing = await prisma.run.findUnique({
+    where: { date },
+    include: { candidates: true },
+  });
+  if (existing && existing.candidates.length > 0 && !force) {
+    throw new Error("This date already has generated posts");
+  }
+
+  const ranked = candidates
+    .map((c) => ({
+      ...c,
+      total: c.score.hook + c.score.insight + c.score.authenticity + c.score.engagement + c.score.clarity,
+    }))
+    .sort((a, b) => b.total - a.total)
+    .map((c, i) => ({ ...c, rank: i + 1 }));
+
+  await prisma.$transaction(async (tx) => {
+    if (existing) {
+      await tx.run.delete({ where: { id: existing.id } });
+    }
+    const run = await tx.run.create({ data: { date } });
+    for (const c of ranked) {
+      await tx.candidate.create({
+        data: {
+          runId: run.id,
+          topic: c.topic,
+          theme: c.theme ?? null,
+          category: c.category ?? null,
+          draft: c.draft,
+          rank: c.rank,
+          score: {
+            create: {
+              hook: c.score.hook,
+              insight: c.score.insight,
+              authenticity: c.score.authenticity,
+              engagement: c.score.engagement,
+              clarity: c.score.clarity,
+              total: c.total,
+            },
+          },
+        },
+      });
+    }
+  });
+
+  return { date, created: true };
+}
 
 /**
  * Runs Scout -> Remy -> Val for `date` and persists the result. Idempotent: if a Run already
@@ -45,47 +119,15 @@ export async function runDailyPipeline(
   const scores = await runVal(scoreInputs);
   const scoreByIndex = new Map(scores.map((s) => [s.index, s]));
 
-  const ranked = topics
-    .map((t, index) => {
-      const score = scoreByIndex.get(index);
-      if (!score) {
-        throw new Error(`Val did not return a score for candidate index ${index}`);
-      }
-      const total = score.hook + score.insight + score.authenticity + score.engagement + score.clarity;
-      return { topic: t.topic, theme: t.theme, draft: drafts[index], score, total };
-    })
-    .sort((a, b) => b.total - a.total)
-    .map((c, i) => ({ ...c, rank: i + 1 }));
-
-  await prisma.$transaction(async (tx) => {
-    if (existing) {
-      await tx.run.delete({ where: { id: existing.id } });
+  const candidates: RankedCandidateInput[] = topics.map((t, index) => {
+    const score = scoreByIndex.get(index);
+    if (!score) {
+      throw new Error(`Val did not return a score for candidate index ${index}`);
     }
-    const run = await tx.run.create({ data: { date } });
-    for (const c of ranked) {
-      await tx.candidate.create({
-        data: {
-          runId: run.id,
-          topic: c.topic,
-          theme: c.theme,
-          draft: c.draft,
-          rank: c.rank,
-          score: {
-            create: {
-              hook: c.score.hook,
-              insight: c.score.insight,
-              authenticity: c.score.authenticity,
-              engagement: c.score.engagement,
-              clarity: c.score.clarity,
-              total: c.total,
-            },
-          },
-        },
-      });
-    }
+    return { topic: t.topic, theme: t.theme, draft: drafts[index], score };
   });
 
-  return { date, created: true };
+  return persistRankedRun(date, candidates, { force: true });
 }
 
 /**
@@ -122,45 +164,13 @@ export async function runCategoryPipeline(
   const scores = await runVal(scoreInputs);
   const scoreByIndex = new Map(scores.map((s) => [s.index, s]));
 
-  const ranked = topics
-    .map((t, index) => {
-      const score = scoreByIndex.get(index);
-      if (!score) {
-        throw new Error(`Val did not return a score for candidate index ${index}`);
-      }
-      const total = score.hook + score.insight + score.authenticity + score.engagement + score.clarity;
-      return { topic: t.topic, category: t.category, draft: drafts[index], score, total };
-    })
-    .sort((a, b) => b.total - a.total)
-    .map((c, i) => ({ ...c, rank: i + 1 }));
-
-  await prisma.$transaction(async (tx) => {
-    if (existing) {
-      await tx.run.delete({ where: { id: existing.id } });
+  const candidates: RankedCandidateInput[] = topics.map((t, index) => {
+    const score = scoreByIndex.get(index);
+    if (!score) {
+      throw new Error(`Val did not return a score for candidate index ${index}`);
     }
-    const run = await tx.run.create({ data: { date } });
-    for (const c of ranked) {
-      await tx.candidate.create({
-        data: {
-          runId: run.id,
-          topic: c.topic,
-          category: c.category,
-          draft: c.draft,
-          rank: c.rank,
-          score: {
-            create: {
-              hook: c.score.hook,
-              insight: c.score.insight,
-              authenticity: c.score.authenticity,
-              engagement: c.score.engagement,
-              clarity: c.score.clarity,
-              total: c.total,
-            },
-          },
-        },
-      });
-    }
+    return { topic: t.topic, category: t.category, draft: drafts[index], score };
   });
 
-  return { date, created: true };
+  return persistRankedRun(date, candidates, { force });
 }
