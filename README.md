@@ -38,7 +38,7 @@ networking / the TCP proxy is enabled on that Postgres service — otherwise any
 Railway's network (Vercel included) can't reach it.
 
 `GEMINI_API_KEY` — get one at https://aistudio.google.com/apikey. Gemini model names rotate fairly
-often; if `GEMINI_MODEL`'s default (`gemini-3.6-flash`) 404s, check
+often; if `GEMINI_MODEL`'s default (`gemini-3.5-flash-lite`) 404s, check
 https://ai.google.dev/gemini-api/docs/models for the current list. Free-tier keys have low
 per-minute rate limits — the pipeline spaces its 7 Gemini calls out with a short delay to stay under
 them, but a project with billing enabled is more reliable for daily production use.
