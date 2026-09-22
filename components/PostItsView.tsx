@@ -116,6 +116,7 @@ export default function PostItsView({
             {cells.map((cell, i) => {
               const assigned = cell.dateStr ? assignedByDate.get(cell.dateStr) : undefined;
               const isDragOver = cell.dateStr !== null && dragOverDate === cell.dateStr;
+              const isMissed = !assigned && cell.dateStr !== null && cell.dateStr < today;
               return (
                 <div
                   key={i}
@@ -141,7 +142,9 @@ export default function PostItsView({
                       ? undefined
                       : isDragOver
                         ? "1px solid var(--color-accent-600)"
-                        : "1px solid var(--color-neutral-800)",
+                        : isMissed
+                          ? "1px dashed var(--color-danger)"
+                          : "1px solid var(--color-neutral-800)",
                     background: !assigned && isDragOver ? "var(--gradient-brand-soft)" : undefined,
                     padding: 6,
                     display: "flex",
@@ -163,9 +166,19 @@ export default function PostItsView({
                       </button>
                     </>
                   )}
+                  {isMissed && (
+                    <span style={{ fontSize: 9, fontWeight: 600, color: "var(--color-danger)", marginTop: 4 }}>Missed</span>
+                  )}
                 </div>
               );
             })}
+          </div>
+
+          <div style={{ display: "flex", gap: "var(--space-4)", marginTop: "var(--space-4)", fontSize: 12, color: "var(--color-neutral-400)" }}>
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 12, height: 12, borderRadius: 3, border: "1px dashed var(--color-danger)" }} />
+              Missed — past day with no subject assigned
+            </span>
           </div>
         </div>
       </div>
