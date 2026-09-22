@@ -5,7 +5,6 @@ import Sidebar from "@/components/Sidebar";
 import DashboardView from "@/components/DashboardView";
 import CalendarView from "@/components/CalendarView";
 import DayView from "@/components/DayView";
-import GenerateDayView from "@/components/GenerateDayView";
 import AnalyticsView from "@/components/AnalyticsView";
 import GeneratorView from "@/components/GeneratorView";
 import PostItsView from "@/components/PostItsView";
@@ -20,6 +19,7 @@ import {
   generateAssignments,
   deleteAssignment,
 } from "@/lib/api";
+import { fmtHeader } from "@/lib/format";
 import type { RunSummary, RunDetail, View, Theme, KanbanCategory, TopicAssignment } from "@/lib/types";
 
 export default function Home() {
@@ -199,27 +199,20 @@ export default function Home() {
               (loadingDetail ? (
                 <DayViewSkeleton />
               ) : runDetail ? (
-                <DayView
-                  run={runDetail}
-                  today={today}
-                  onBack={() => setView("calendar")}
-                  onPublish={handlePublish}
-                  onRegenerated={(detail) => {
-                    setRunDetail(detail);
-                    loadRuns();
-                  }}
-                />
+                <DayView run={runDetail} today={today} onBack={() => setView("calendar")} onPublish={handlePublish} />
               ) : (
                 selectedDate && (
-                  <GenerateDayView
-                    date={selectedDate}
-                    today={today}
-                    onBack={() => setView("calendar")}
-                    onGenerated={(detail) => {
-                      setRunDetail(detail);
-                      loadRuns();
-                    }}
-                  />
+                  <>
+                    <div>
+                      <button onClick={() => setView("calendar")} className="link-btn" style={{ marginBottom: "var(--space-2)" }}>
+                        ← Back to Calendar
+                      </button>
+                      <div className="page-title">{fmtHeader(selectedDate, today)}</div>
+                    </div>
+                    <div className="empty-state" style={{ maxWidth: 560, marginTop: "var(--space-3)" }}>
+                      No posts yet for this date.
+                    </div>
+                  </>
                 )
               ))}
             {view === "analytics" && <AnalyticsView runs={runs} today={today} />}

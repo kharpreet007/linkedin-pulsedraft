@@ -86,7 +86,7 @@ export default function CalendarView({
           <div className="page-title">
             {MONTH_NAMES[calMonth]} {calYear}
           </div>
-          <div className="page-subtitle">Click any date to view its candidates, or pick subjects to generate new ones</div>
+          <div className="page-subtitle">Click any date to view its candidates</div>
         </div>
         <div style={{ display: "flex", gap: "var(--space-2)" }}>
           <button className="btn btn-ghost" onClick={prevMonth} style={{ padding: "7px 13px", fontSize: 15, lineHeight: 1 }}>
@@ -100,8 +100,7 @@ export default function CalendarView({
 
       {runs.length === 0 && (
         <div className="empty-state" style={{ maxWidth: 680, marginTop: "var(--space-4)" }}>
-          No posts yet — today&apos;s pipeline runs automatically once a day, or click any date below
-          to choose subjects and generate 5 candidates for it right away.
+          No posts yet — today&apos;s pipeline runs automatically once a day.
         </div>
       )}
 

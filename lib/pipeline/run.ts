@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { runScout, runScoutByCategories } from "./scout";
+import { runScout } from "./scout";
 import { runRemy } from "./remy";
 import { runVal } from "./val";
 import type { KanbanCategory, Theme } from "@prisma/client";
@@ -28,11 +28,11 @@ export interface RankedCandidateInput {
 }
 
 /**
- * Shared persistence step for all three ways a day's 5 candidates get created (the automatic
- * daily pipeline, the Calendar's category-picker generation, and the manual ingest endpoint):
- * ranks by total score and writes the Run/Candidate/Score rows. Throws if the date already has
- * candidates, unless `force` is set (which replaces them, cascading away any posted
- * selection/engagement — only for a deliberate redo).
+ * Shared persistence step for both ways a day's 5 candidates get created (the automatic daily
+ * pipeline, and the ingest endpoint for externally-generated content): ranks by total score and
+ * writes the Run/Candidate/Score rows. Throws if the date already has candidates, unless `force`
+ * is set (which replaces them, cascading away any posted selection/engagement — only for a
+ * deliberate redo).
  */
 export async function persistRankedRun(
   date: string,
@@ -128,49 +128,4 @@ export async function runDailyPipeline(
   });
 
   return persistRankedRun(date, candidates, { force: true });
-}
-
-/**
- * Same Scout -> Remy -> Val flow as `runDailyPipeline`, but for the Calendar's per-date
- * generation: topics come only from `categories` (the Post Its subject list) instead of the
- * fixed PM/AI/Psychology split. By default this is meant for a date that doesn't have posts
- * yet — it throws rather than silently no-op'ing if the date already has candidates, so the
- * caller can tell the user it's not an empty day. Pass `force: true` to deliberately replace an
- * existing day's candidates instead (e.g. regenerating with different subjects from the day
- * view) — this also deletes that day's posted selection and engagement, if any.
- */
-export async function runCategoryPipeline(
-  date: string,
-  categories: KanbanCategory[],
-  { force = false }: { force?: boolean } = {}
-): Promise<DailyRunResult> {
-  const existing = await prisma.run.findUnique({
-    where: { date },
-    include: { candidates: true },
-  });
-  if (existing && existing.candidates.length > 0 && !force) {
-    throw new Error("This date already has generated posts");
-  }
-
-  const topics = await runScoutByCategories(categories);
-  const drafts: string[] = [];
-  for (const t of topics) {
-    await sleep(GEMINI_CALL_GAP_MS);
-    drafts.push(await runRemy(t.topic));
-  }
-
-  const scoreInputs = topics.map((t, index) => ({ index, topic: t.topic, draft: drafts[index] }));
-  await sleep(GEMINI_CALL_GAP_MS);
-  const scores = await runVal(scoreInputs);
-  const scoreByIndex = new Map(scores.map((s) => [s.index, s]));
-
-  const candidates: RankedCandidateInput[] = topics.map((t, index) => {
-    const score = scoreByIndex.get(index);
-    if (!score) {
-      throw new Error(`Val did not return a score for candidate index ${index}`);
-    }
-    return { topic: t.topic, category: t.category, draft: drafts[index], score };
-  });
-
-  return persistRankedRun(date, candidates, { force });
 }
