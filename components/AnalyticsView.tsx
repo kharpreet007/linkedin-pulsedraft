@@ -23,6 +23,16 @@ import WeeklyPostRateChart from "./WeeklyPostRateChart";
 import TrendLineChart from "./TrendLineChart";
 import BarComparisonChart from "./BarComparisonChart";
 import DimensionCorrelationChart from "./DimensionCorrelationChart";
+import SegmentedTabs, { type TabOption } from "./SegmentedTabs";
+
+type ViewTab = "all" | "posting" | "content" | "scoring" | "process";
+const VIEW_TABS: TabOption[] = [
+  { key: "all", label: "Overview" },
+  { key: "posting", label: "Posting Habits" },
+  { key: "content", label: "Content Strategy" },
+  { key: "scoring", label: "Scoring Model" },
+  { key: "process", label: "Process Health" },
+];
 
 const pct = (v: number | null) => (v === null ? "n/a" : `${(v * 100).toFixed(1)}%`);
 const signedPct = (v: number | null) => (v === null ? "n/a" : `${v >= 0 ? "+" : ""}${v}%`);
@@ -84,6 +94,9 @@ const grid: React.CSSProperties = {
 };
 
 export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; today: string }) {
+  const [tab, setTab] = useState<ViewTab>("all");
+  const show = (key: ViewTab) => tab === "all" || tab === key;
+
   const posted = useMemo(() => runs.filter((r) => r.postedSelection), [runs]);
   const postedChrono = useMemo(() => [...posted].sort((a, b) => a.date.localeCompare(b.date)), [posted]);
 
@@ -275,52 +288,59 @@ export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; tod
         ))}
       </div>
 
-      <div className="card" style={{ marginTop: "var(--space-5)" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "var(--space-3)" }}>
-          <div className="card-title" style={{ fontSize: 16 }}>
-            Posting consistently vs. before?
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
-            <label style={{ fontSize: 12, color: "var(--color-neutral-400)" }}>Your baseline (posts/week)</label>
-            <input
-              className="input"
-              type="number"
-              min={0}
-              step="0.1"
-              style={{ width: 70 }}
-              value={baselineInput}
-              onChange={(e) => setBaselineInput(e.target.value)}
-              onBlur={saveBaseline}
-              onKeyDown={(e) => e.key === "Enter" && saveBaseline()}
-            />
-            {savingBaseline && <span style={{ fontSize: 11, color: "var(--color-neutral-500)" }}>Saving…</span>}
-          </div>
-        </div>
-
-        {posted.length > 0 ? (
-          <>
-            <div style={{ marginTop: "var(--space-3)", marginBottom: "var(--space-3)" }}>
-              <WeeklyPostRateChart weeks={weeklyCounts} baseline={baseline} />
-            </div>
-            <div style={{ fontSize: 13, color: "var(--color-neutral-300)" }}>
-              Averaging <strong>{currentRate.toFixed(1)} posts/week</strong> over the last 4 weeks
-              {baseline !== null && baseline > 0 && vsBaselinePct !== null && (
-                <>
-                  {" "}
-                  — <strong style={{ color: vsBaselinePct >= 0 ? "var(--color-accent-300)" : "var(--color-danger)" }}>
-                    {signedPct(vsBaselinePct)}
-                  </strong>{" "}
-                  vs. your {baseline}/week baseline.
-                </>
-              )}
-              {(baseline === null || baseline === 0) && " — set your baseline above to compare against your pre-tool cadence."}
-            </div>
-          </>
-        ) : (
-          <div className="empty-state" style={{ marginTop: "var(--space-3)" }}>No published posts yet.</div>
-        )}
+      <div style={{ marginTop: "var(--space-4)" }}>
+        <SegmentedTabs options={VIEW_TABS} value={tab} onChange={(k) => setTab(k as ViewTab)} />
       </div>
 
+      {show("posting") && (
+        <div className="card" style={{ marginTop: "var(--space-5)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "var(--space-3)" }}>
+            <div className="card-title" style={{ fontSize: 16 }}>
+              Posting consistently vs. before?
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
+              <label style={{ fontSize: 12, color: "var(--color-neutral-400)" }}>Your baseline (posts/week)</label>
+              <input
+                className="input"
+                type="number"
+                min={0}
+                step="0.1"
+                style={{ width: 70 }}
+                value={baselineInput}
+                onChange={(e) => setBaselineInput(e.target.value)}
+                onBlur={saveBaseline}
+                onKeyDown={(e) => e.key === "Enter" && saveBaseline()}
+              />
+              {savingBaseline && <span style={{ fontSize: 11, color: "var(--color-neutral-500)" }}>Saving…</span>}
+            </div>
+          </div>
+
+          {posted.length > 0 ? (
+            <>
+              <div style={{ marginTop: "var(--space-3)", marginBottom: "var(--space-3)" }}>
+                <WeeklyPostRateChart weeks={weeklyCounts} baseline={baseline} />
+              </div>
+              <div style={{ fontSize: 13, color: "var(--color-neutral-300)" }}>
+                Averaging <strong>{currentRate.toFixed(1)} posts/week</strong> over the last 4 weeks
+                {baseline !== null && baseline > 0 && vsBaselinePct !== null && (
+                  <>
+                    {" "}
+                    — <strong style={{ color: vsBaselinePct >= 0 ? "var(--color-accent-300)" : "var(--color-danger)" }}>
+                      {signedPct(vsBaselinePct)}
+                    </strong>{" "}
+                    vs. your {baseline}/week baseline.
+                  </>
+                )}
+                {(baseline === null || baseline === 0) && " — set your baseline above to compare against your pre-tool cadence."}
+              </div>
+            </>
+          ) : (
+            <div className="empty-state" style={{ marginTop: "var(--space-3)" }}>No published posts yet.</div>
+          )}
+        </div>
+      )}
+
+      {show("content") && (
       <Section title="Content strategy" subtitle="What should I actually generate more of?">
         <div style={grid}>
           <MetricCard
@@ -407,7 +427,9 @@ export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; tod
           </MetricCard>
         </div>
       </Section>
+      )}
 
+      {show("scoring") && (
       <Section title="Is the scoring model any good?" subtitle="Should I trust Val's ranking, and which part of it actually works?">
         <div style={grid}>
           <MetricCard
@@ -515,7 +537,9 @@ export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; tod
           </MetricCard>
         </div>
       </Section>
+      )}
 
+      {show("process") && (
       <Section title="Process health" subtitle="Is the day-to-day system itself working the way it should?">
         <div style={grid}>
           <MetricCard
@@ -574,6 +598,7 @@ export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; tod
           </MetricCard>
         </div>
       </Section>
+      )}
     </>
   );
 }
