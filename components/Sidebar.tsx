@@ -95,7 +95,9 @@ export default function Sidebar({
             flexShrink: 0,
           }}
         >
-          <span style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 16, color: "#fff" }}>P</span>
+          <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 15, letterSpacing: "-0.03em", color: "#fff" }}>
+            in
+          </span>
         </div>
         <div>
           <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 16, letterSpacing: "-0.01em", lineHeight: 1.2 }}>
