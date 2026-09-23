@@ -22,11 +22,19 @@ const VALID_CATEGORIES: KanbanCategory[] = [
 ];
 const SCORE_FIELDS = ["hook", "insight", "authenticity", "engagement", "clarity"] as const;
 
+/** A caller that double-escaped its JSON (common when hand-building a curl payload) ends up
+ *  sending the literal two-character sequence "\n" instead of a real line break — convert
+ *  those back into actual newlines so drafts always render with real line breaks. */
+function normalizeEscapedNewlines(text: string): string {
+  return text.replace(/\\r\\n|\\n|\\r/g, "\n");
+}
+
 function parseCandidate(raw: unknown, index: number): RankedCandidateInput {
   const c = raw as Record<string, unknown>;
   if (!c || typeof c !== "object") throw new Error(`Candidate ${index}: must be an object`);
   if (typeof c.topic !== "string" || !c.topic.trim()) throw new Error(`Candidate ${index}: topic is required`);
   if (typeof c.draft !== "string" || !c.draft.trim()) throw new Error(`Candidate ${index}: draft is required`);
+  const draft = normalizeEscapedNewlines(c.draft);
   if (c.theme !== undefined && c.theme !== null && !VALID_THEMES.includes(c.theme as Theme)) {
     throw new Error(`Candidate ${index}: theme must be one of ${VALID_THEMES.join(", ")}`);
   }
@@ -56,7 +64,7 @@ function parseCandidate(raw: unknown, index: number): RankedCandidateInput {
 
   return {
     topic: c.topic.trim(),
-    draft: c.draft.trim(),
+    draft: draft.trim(),
     theme: (c.theme as Theme | undefined) ?? null,
     category: (c.category as KanbanCategory | undefined) ?? null,
     sourceUrl: (c.sourceUrl as string | undefined)?.trim() ?? null,
