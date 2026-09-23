@@ -19,17 +19,25 @@ const PAD_RIGHT = 10;
 const PAD_TOP = 10;
 const PAD_BOTTOM = 26;
 
-/** Single-series scatter — one dot per published post, Val's score (x) vs. actual
- *  engagement (y). No legend needed for a single series; details live in the
- *  hover/focus tooltip, with exact values always available in the list below. */
-export default function ScoreVsEngagementChart({ points }: { points: ScorePoint[] }) {
+/** Single-series scatter — one dot per published post, Val's score (x) vs. actual engagement
+ *  rate (y). No legend needed for a single series; details live in the hover/focus tooltip, with
+ *  exact values always available in the list below. `engagement` is a rate (likes+comments /
+ *  impressions), not a raw count, so it's comparable across posts with different reach and
+ *  directly comparable to the per-dimension correlation chart shown alongside it. */
+export default function ScoreVsEngagementChart({
+  points,
+  formatY = (v) => v.toFixed(3),
+}: {
+  points: ScorePoint[];
+  formatY?: (v: number) => string;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [hovered, setHovered] = useState<{ index: number; x: number; y: number } | null>(null);
 
   if (points.length === 0) return null;
 
-  const maxEngagement = Math.max(...points.map((p) => p.engagement), 1);
-  const yMax = Math.max(Math.ceil((maxEngagement * 1.15) / 5) * 5, 5);
+  const maxEngagement = Math.max(...points.map((p) => p.engagement), 0.0001);
+  const yMax = maxEngagement * 1.15;
 
   const xScale = (score: number) => PAD_LEFT + (score / 50) * (WIDTH - PAD_LEFT - PAD_RIGHT);
   const yScale = (value: number) => HEIGHT - PAD_BOTTOM - (value / yMax) * (HEIGHT - PAD_TOP - PAD_BOTTOM);
@@ -50,7 +58,7 @@ export default function ScoreVsEngagementChart({ points }: { points: ScorePoint[
   return (
     <div>
       <div className="eyebrow-sm" style={{ marginBottom: 6 }}>
-        Score (0–50) vs. engagement (likes + comments)
+        Score (0–50) vs. engagement rate ((likes + comments) / impressions)
       </div>
       <div ref={containerRef} style={{ position: "relative" }}>
         <svg
@@ -71,7 +79,7 @@ export default function ScoreVsEngagementChart({ points }: { points: ScorePoint[
 
           {[0, yMax].map((v) => (
             <text key={v} x={PAD_LEFT - 6} y={yScale(v) + 3} textAnchor="end" fontSize={9} fill="var(--color-neutral-500)">
-              {v}
+              {formatY(v)}
             </text>
           ))}
           {[0, 25, 50].map((v) => (
@@ -93,7 +101,7 @@ export default function ScoreVsEngagementChart({ points }: { points: ScorePoint[
                   className="chart-dot-hit"
                   tabIndex={0}
                   role="button"
-                  aria-label={`${p.topic}: score ${p.score} out of 50, ${p.engagement} engagement`}
+                  aria-label={`${p.topic}: score ${p.score} out of 50, engagement rate ${formatY(p.engagement)}`}
                   onMouseEnter={(e) => showTooltip(i, e.currentTarget)}
                   onMouseLeave={() => setHovered(null)}
                   onFocus={(e) => showTooltip(i, e.currentTarget)}

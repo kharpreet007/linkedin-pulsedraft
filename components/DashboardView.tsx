@@ -1,10 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import type { RunSummary, Theme } from "@/lib/types";
+import type { RunSummary } from "@/lib/types";
 import { fmtLabel } from "@/lib/format";
-
-const THEMES: Theme[] = ["PM", "AI", "Psychology"];
 
 export default function DashboardView({
   runs,
@@ -14,7 +12,7 @@ export default function DashboardView({
 }: {
   runs: RunSummary[];
   today: string;
-  onEditSelection: (date: string, patch: { topic?: string; theme?: Theme }) => void;
+  onEditSelection: (date: string, patch: { topic?: string }) => void;
   onEditEngagement: (date: string, patch: { impressions?: number; likes?: number; comments?: number }) => void;
 }) {
   const postedRuns = runs.filter((r) => r.postedSelection);
@@ -31,7 +29,7 @@ export default function DashboardView({
           <tr>
             <th>Date</th>
             <th>Topic</th>
-            <th>Theme</th>
+            <th>Category</th>
             <th>Impressions</th>
             <th>Likes</th>
             <th>Comments</th>
@@ -67,7 +65,7 @@ function DashboardRow({
 }: {
   run: RunSummary;
   today: string;
-  onEditSelection: (date: string, patch: { topic?: string; theme?: Theme }) => void;
+  onEditSelection: (date: string, patch: { topic?: string }) => void;
   onEditEngagement: (date: string, patch: { impressions?: number; likes?: number; comments?: number }) => void;
 }) {
   const [topic, setTopic] = useState(run.postedSelection?.topic ?? "");
@@ -89,18 +87,7 @@ function DashboardRow({
         />
       </td>
       <td>
-        <select
-          className="input"
-          style={{ minWidth: 120 }}
-          value={run.postedSelection?.theme ?? "PM"}
-          onChange={(e) => onEditSelection(run.date, { theme: e.target.value as Theme })}
-        >
-          {THEMES.map((t) => (
-            <option key={t} value={t}>
-              {t}
-            </option>
-          ))}
-        </select>
+        <span className="tag tag-neutral">{run.postedSelection?.category ?? "—"}</span>
       </td>
       <td>
         <input

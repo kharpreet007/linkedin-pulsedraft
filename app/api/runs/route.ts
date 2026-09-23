@@ -23,13 +23,23 @@ export async function GET() {
         ? {
             candidateId: run.postedSelection.candidateId,
             topic: run.postedSelection.topicOverride ?? run.postedSelection.candidate.topic,
-            theme:
+            category:
               run.postedSelection.themeOverride ??
               run.postedSelection.candidate.theme ??
               (run.postedSelection.candidate.category
                 ? KANBAN_CATEGORY_LABELS[run.postedSelection.candidate.category]
                 : "—"),
-            scoreTotal: run.postedSelection.candidate.score?.total ?? null,
+            grounded: !!run.postedSelection.candidate.sourceUrl,
+            score: run.postedSelection.candidate.score
+              ? {
+                  hook: run.postedSelection.candidate.score.hook,
+                  insight: run.postedSelection.candidate.score.insight,
+                  authenticity: run.postedSelection.candidate.score.authenticity,
+                  engagement: run.postedSelection.candidate.score.engagement,
+                  clarity: run.postedSelection.candidate.score.clarity,
+                  total: run.postedSelection.candidate.score.total,
+                }
+              : null,
             rank: run.postedSelection.candidate.rank,
             postedAt: run.postedSelection.postedAt.toISOString(),
           }

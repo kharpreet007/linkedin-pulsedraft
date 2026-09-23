@@ -20,7 +20,7 @@ import {
   deleteAssignment,
 } from "@/lib/api";
 import { fmtHeader } from "@/lib/format";
-import type { RunSummary, RunDetail, View, Theme, KanbanCategory, TopicAssignment } from "@/lib/types";
+import type { RunSummary, RunDetail, View, KanbanCategory, TopicAssignment } from "@/lib/types";
 
 export default function Home() {
   const [view, setView] = useState<View>("calendar");
@@ -75,7 +75,7 @@ export default function Home() {
     }
   };
 
-  const handleEditSelection = async (date: string, patch: { topic?: string; theme?: Theme }) => {
+  const handleEditSelection = async (date: string, patch: { topic?: string }) => {
     setRuns(
       (prev) =>
         prev?.map((r) =>
@@ -85,7 +85,6 @@ export default function Home() {
                 postedSelection: {
                   ...r.postedSelection,
                   ...(patch.topic !== undefined ? { topic: patch.topic } : {}),
-                  ...(patch.theme !== undefined ? { theme: patch.theme } : {}),
                 },
               }
             : r

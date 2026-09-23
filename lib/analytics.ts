@@ -90,6 +90,161 @@ export function computeTrend(valuesInChronoOrder: number[]): TrendResult | null 
   return { direction, changePct };
 }
 
+/** (numerator / impressions), or null when there's no impression data to normalize against —
+ *  raw like/comment counts aren't comparable across posts with wildly different reach, so every
+ *  cross-post comparison in this module should use a rate, not a raw count. */
+export function rate(numerator: number, impressions: number): number | null {
+  if (impressions <= 0) return null;
+  return numerator / impressions;
+}
+
+export interface GroupStat {
+  key: string;
+  count: number;
+  avgRate: number | null;
+  avgImpressions: number;
+  avgLikes: number;
+  avgComments: number;
+}
+
+interface EngagementLike {
+  impressions: number;
+  likes: number;
+  comments: number;
+}
+
+/** Groups posts by an arbitrary key (category, weekday, grounded/not, …) and averages their
+ *  engagement rate — the shared aggregation behind most of the "what should we make more of"
+ *  questions. Groups with no impression data still appear (avgRate null) rather than vanishing. */
+export function groupByKey<T extends EngagementLike>(items: T[], keyOf: (item: T) => string): GroupStat[] {
+  const groups = new Map<string, T[]>();
+  for (const item of items) {
+    const key = keyOf(item);
+    const arr = groups.get(key) ?? [];
+    arr.push(item);
+    groups.set(key, arr);
+  }
+  const avg = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / arr.length;
+  return [...groups.entries()].map(([key, group]) => {
+    const rates = group.map((g) => rate(g.likes + g.comments, g.impressions)).filter((r): r is number => r !== null);
+    return {
+      key,
+      count: group.length,
+      avgRate: rates.length > 0 ? avg(rates) : null,
+      avgImpressions: Math.round(avg(group.map((g) => g.impressions))),
+      avgLikes: Math.round(avg(group.map((g) => g.likes))),
+      avgComments: Math.round(avg(group.map((g) => g.comments))),
+    };
+  });
+}
+
+/** Mon-Sun label for a YYYY-MM-DD date key, independent of local timezone. */
+export function weekdayName(dateStr: string): string {
+  const d = new Date(dateStr.slice(0, 10) + "T00:00:00Z");
+  return d.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" });
+}
+
+const WEEKDAY_ORDER = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+/** Reorders a weekday GroupStat[] into Mon..Sun (any group key groupByKey didn't see is filled
+ *  in as a zero-count placeholder so the chart always shows all 7 days). */
+export function orderByWeekday(groups: GroupStat[]): GroupStat[] {
+  const byKey = new Map(groups.map((g) => [g.key, g]));
+  return WEEKDAY_ORDER.map(
+    (day) => byKey.get(day) ?? { key: day, count: 0, avgRate: null, avgImpressions: 0, avgLikes: 0, avgComments: 0 }
+  );
+}
+
+export interface DimensionCorrelation {
+  dimension: string;
+  r: number | null;
+}
+
+/** For each of Val's five score dimensions, correlates that dimension alone against actual
+ *  engagement rate — the total-score correlation says whether Val's judgment works overall, this
+ *  says which specific dimension is actually carrying that signal (or dragging it down). */
+export function computeDimensionCorrelations(
+  posts: { hook: number; insight: number; authenticity: number; engagement: number; clarity: number; actualRate: number }[]
+): DimensionCorrelation[] {
+  const dims = [
+    ["Hook", (p: (typeof posts)[number]) => p.hook],
+    ["Insight", (p: (typeof posts)[number]) => p.insight],
+    ["Authenticity", (p: (typeof posts)[number]) => p.authenticity],
+    ["Engagement (Val)", (p: (typeof posts)[number]) => p.engagement],
+    ["Clarity", (p: (typeof posts)[number]) => p.clarity],
+  ] as const;
+  const ys = posts.map((p) => p.actualRate);
+  return dims.map(([dimension, pick]) => ({
+    dimension,
+    r: pearsonCorrelation(posts.map(pick), ys),
+  }));
+}
+
+export interface OverrideComparison {
+  followedValCount: number;
+  followedValAvgRate: number | null;
+  overriddenCount: number;
+  overriddenAvgRate: number | null;
+}
+
+/** Splits posted candidates into "Val's #1 pick" vs. "an override" and compares their average
+ *  engagement rate — not a paired before/after (the un-posted #1 pick has no engagement data by
+ *  definition), but it tells you whether overriding tends to pay off or not, on average. */
+export function computeOverrideComparison(posts: { rank: number | null; impressions: number; likes: number; comments: number }[]): OverrideComparison {
+  const withRank = posts.filter((p): p is typeof p & { rank: number } => p.rank !== null);
+  const followed = withRank.filter((p) => p.rank === 1);
+  const overridden = withRank.filter((p) => p.rank !== 1);
+  const avgRate = (group: typeof withRank) => {
+    const rates = group.map((p) => rate(p.likes + p.comments, p.impressions)).filter((r): r is number => r !== null);
+    return rates.length > 0 ? rates.reduce((a, b) => a + b, 0) / rates.length : null;
+  };
+  return {
+    followedValCount: followed.length,
+    followedValAvgRate: avgRate(followed),
+    overriddenCount: overridden.length,
+    overriddenAvgRate: avgRate(overridden),
+  };
+}
+
+/** Whole days between two YYYY-MM-DD date keys. */
+export function daysBetween(earlier: string, later: string): number {
+  const a = new Date(earlier.slice(0, 10) + "T00:00:00Z").getTime();
+  const b = new Date(later.slice(0, 10) + "T00:00:00Z").getTime();
+  return Math.round((b - a) / 86400000);
+}
+
+export interface GapComparison {
+  backToBackCount: number;
+  backToBackAvgRate: number | null;
+  afterGapCount: number;
+  afterGapAvgRate: number | null;
+}
+
+/** Compares engagement rate for posts published the day right after the previous post
+ *  ("back-to-back") vs. posts that followed a gap of 2+ days — a cheap proxy for whether
+ *  consistency itself feeds the algorithm, independent of content quality. Needs posts in
+ *  chronological order by run date. */
+export function computePostingGapEffect(
+  postsChrono: { date: string; impressions: number; likes: number; comments: number }[]
+): GapComparison {
+  const backToBack: typeof postsChrono = [];
+  const afterGap: typeof postsChrono = [];
+  for (let i = 1; i < postsChrono.length; i++) {
+    const gap = daysBetween(postsChrono[i - 1].date, postsChrono[i].date);
+    (gap <= 1 ? backToBack : afterGap).push(postsChrono[i]);
+  }
+  const avgRate = (group: typeof postsChrono) => {
+    const rates = group.map((p) => rate(p.likes + p.comments, p.impressions)).filter((r): r is number => r !== null);
+    return rates.length > 0 ? rates.reduce((a, b) => a + b, 0) / rates.length : null;
+  };
+  return {
+    backToBackCount: backToBack.length,
+    backToBackAvgRate: avgRate(backToBack),
+    afterGapCount: afterGap.length,
+    afterGapAvgRate: avgRate(afterGap),
+  };
+}
+
 export interface PickAgreement {
   totalPosted: number;
   rank1Count: number;

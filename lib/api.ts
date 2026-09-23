@@ -28,7 +28,7 @@ export function publishCandidate(date: string, candidateId: string): Promise<{ c
 
 export function updateSelection(
   date: string,
-  patch: { topic?: string; theme?: Theme }
+  patch: { topic?: string }
 ): Promise<{ topicOverride: string | null; themeOverride: Theme | null }> {
   return fetch(`/api/runs/${date}/selection`, {
     method: "PATCH",

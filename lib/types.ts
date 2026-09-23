@@ -7,8 +7,9 @@ export interface RunSummary {
   postedSelection: {
     candidateId: string;
     topic: string;
-    theme: string;
-    scoreTotal: number | null;
+    category: string;
+    grounded: boolean;
+    score: CandidateScore | null;
     rank: number | null;
     postedAt: string;
   } | null;
