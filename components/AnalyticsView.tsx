@@ -114,6 +114,13 @@ export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; tod
   }, []);
 
   const saveBaseline = () => {
+    // An empty field (e.g. a stray blur before the initial fetch resolves, or clearing the
+    // input by accident) must NOT save — Number("") is 0, not NaN, so without this guard an
+    // empty blur silently overwrites a real baseline with 0.
+    if (baselineInput.trim() === "") {
+      setBaselineInput(baseline !== null ? String(baseline) : "");
+      return;
+    }
     const value = Number(baselineInput);
     if (!Number.isFinite(value) || value < 0) return;
     setSavingBaseline(true);
