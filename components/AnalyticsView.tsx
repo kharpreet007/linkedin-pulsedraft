@@ -39,13 +39,39 @@ function Section({ title, subtitle, children }: { title: string; subtitle: strin
   );
 }
 
-function MetricCard({ title, empty, children }: { title: string; empty: boolean; children: ReactNode }) {
+const CARD_MIN_HEIGHT = 380;
+
+/** Every metric tile shares one shape — title, a chart area that's vertically centered so it
+ *  never looks pinned to the top of extra whitespace, and an optional footer stat pinned to the
+ *  bottom. Combined with `grid`'s `alignItems: stretch`, this is what makes every card in a row
+ *  match height instead of each one hugging its own content (the "some sections take too much
+ *  space" problem). */
+function MetricCard({
+  title,
+  empty,
+  footer,
+  children,
+}: {
+  title: string;
+  empty: boolean;
+  footer?: ReactNode;
+  children: ReactNode;
+}) {
   return (
-    <div className="card">
+    <div className="card" style={{ display: "flex", flexDirection: "column", minHeight: CARD_MIN_HEIGHT }}>
       <div className="card-title" style={{ fontSize: 16, marginBottom: "var(--space-3)" }}>
         {title}
       </div>
-      {empty ? <div className="empty-state">Not enough data yet.</div> : children}
+      {empty ? (
+        <div className="empty-state" style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          Not enough data yet.
+        </div>
+      ) : (
+        <>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>{children}</div>
+          {footer && <div style={{ marginTop: "var(--space-3)" }}>{footer}</div>}
+        </>
+      )}
     </div>
   );
 }
@@ -54,7 +80,7 @@ const grid: React.CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fit,minmax(320px,1fr))",
   gap: "var(--space-4)",
-  alignItems: "start",
+  alignItems: "stretch",
 };
 
 export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; today: string }) {
@@ -151,6 +177,8 @@ export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; tod
 
   // Q4 — is there a day-of-week effect?
   const dowGroups = useMemo(() => orderByWeekday(groupByKey(postRows, (r) => weekdayName(r.date))), [postRows]);
+  const bestDow = [...dowGroups].sort((a, b) => (b.avgRate ?? -1) - (a.avgRate ?? -1)).find((d) => d.avgRate !== null) ?? null;
+  const worstDow = [...dowGroups].sort((a, b) => (a.avgRate ?? Infinity) - (b.avgRate ?? Infinity)).find((d) => d.avgRate !== null) ?? null;
 
   // Val's total score vs. actual results, and which single dimension is doing the work
   const scoreVsResultRows = measured
@@ -232,11 +260,15 @@ export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; tod
         <div className="page-subtitle">Everything a PM would want to know before deciding what to generate next.</div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: "var(--space-3)", marginTop: "var(--space-4)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: "var(--space-3)", marginTop: "var(--space-4)", alignItems: "stretch" }}>
         {kpis.map((k) => (
-          <div className="card" key={k.label}>
+          <div className="card" key={k.label} style={{ minHeight: 92 }}>
             <div className="card-meta">{k.label}</div>
-            <div className="stat-value" style={{ marginTop: 6, fontSize: 22 }}>
+            <div
+              className="stat-value"
+              style={{ marginTop: 6, fontSize: 22, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+              title={k.value}
+            >
               {k.value}
             </div>
           </div>
@@ -291,36 +323,57 @@ export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; tod
 
       <Section title="Content strategy" subtitle="What should I actually generate more of?">
         <div style={grid}>
-          <MetricCard title="Which category performs best?" empty={categoryGroups.length === 0}>
+          <MetricCard
+            title="Which category performs best?"
+            empty={categoryGroups.length === 0}
+            footer={
+              bestCategory && (
+                <div style={{ fontSize: 12, color: "var(--color-neutral-400)" }}>
+                  <strong style={{ color: "var(--color-accent-300)" }}>{bestCategory.key}</strong> leads at {pct(bestCategory.avgRate)}
+                  {worstCategory && worstCategory.key !== bestCategory.key && <> · {worstCategory.key} trails at {pct(worstCategory.avgRate)}</>}.
+                </div>
+              )
+            }
+          >
             <BarComparisonChart
               bars={categoryGroups.map((c) => ({ label: c.key, value: c.avgRate, count: c.count }))}
               formatValue={pct}
               ariaLabel="Average engagement rate by category"
             />
-            {bestCategory && (
-              <div style={{ fontSize: 12, color: "var(--color-neutral-400)", marginTop: "var(--space-3)" }}>
-                <strong style={{ color: "var(--color-accent-300)" }}>{bestCategory.key}</strong> leads at {pct(bestCategory.avgRate)}
-                {worstCategory && worstCategory.key !== bestCategory.key && <> · {worstCategory.key} trails at {pct(worstCategory.avgRate)}</>}.
-              </div>
-            )}
           </MetricCard>
 
-          <MetricCard title="Do grounded (real-source) posts win?" empty={!grounded || !general}>
+          <MetricCard
+            title="Do grounded (real-source) posts win?"
+            empty={!grounded || !general}
+            footer={
+              <div style={{ fontSize: 12, color: "var(--color-neutral-400)" }}>
+                {groundedLiftPct === null
+                  ? "Need both grounded and general-knowledge posts with logged engagement to compare."
+                  : groundedLiftPct >= 0
+                    ? <>Grounded posts run <strong style={{ color: "var(--color-accent-300)" }}>{signedPct(groundedLiftPct)}</strong> vs. general-knowledge ones — the web-search feature is paying off.</>
+                    : <>Grounded posts run <strong style={{ color: "var(--color-danger)" }}>{signedPct(groundedLiftPct)}</strong> vs. general-knowledge ones — worth a closer look at topic selection.</>}
+              </div>
+            }
+          >
             <BarComparisonChart
               bars={[grounded, general].filter((g): g is NonNullable<typeof g> => !!g).map((g) => ({ label: g.key, value: g.avgRate, count: g.count }))}
               formatValue={pct}
               ariaLabel="Average engagement rate, grounded vs. general-knowledge posts"
             />
-            <div style={{ fontSize: 12, color: "var(--color-neutral-400)", marginTop: "var(--space-3)" }}>
-              {groundedLiftPct === null
-                ? "Need both grounded and general-knowledge posts with logged engagement to compare."
-                : groundedLiftPct >= 0
-                  ? <>Grounded posts run <strong style={{ color: "var(--color-accent-300)" }}>{signedPct(groundedLiftPct)}</strong> vs. general-knowledge ones — the web-search feature is paying off.</>
-                  : <>Grounded posts run <strong style={{ color: "var(--color-danger)" }}>{signedPct(groundedLiftPct)}</strong> vs. general-knowledge ones — worth a closer look at topic selection.</>}
-            </div>
           </MetricCard>
 
-          <MetricCard title="Is there a day-of-week effect?" empty={dowGroups.every((d) => d.count === 0)}>
+          <MetricCard
+            title="Is there a day-of-week effect?"
+            empty={dowGroups.every((d) => d.count === 0)}
+            footer={
+              bestDow && (
+                <div style={{ fontSize: 12, color: "var(--color-neutral-400)" }}>
+                  <strong style={{ color: "var(--color-accent-300)" }}>{bestDow.key}</strong> leads at {pct(bestDow.avgRate)}
+                  {worstDow && worstDow.key !== bestDow.key && <> · {worstDow.key} trails at {pct(worstDow.avgRate)}</>}.
+                </div>
+              )
+            }
+          >
             <BarComparisonChart
               bars={dowGroups.map((d) => ({ label: d.key, value: d.avgRate, count: d.count }))}
               formatValue={pct}
@@ -328,56 +381,70 @@ export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; tod
             />
           </MetricCard>
 
-          <MetricCard title="Is engagement rate trending up?" empty={ratePoints.length === 0}>
+          <MetricCard
+            title="Is engagement rate trending up?"
+            empty={ratePoints.length === 0}
+            footer={
+              <div style={{ fontSize: 13, color: "var(--color-neutral-300)" }}>
+                {rateTrend === null && "Not enough measured posts yet to call a trend (need at least 4)."}
+                {rateTrend !== null && rateTrend.direction === "up" && (
+                  <>
+                    <strong style={{ color: "var(--color-accent-300)" }}>Trending up</strong>
+                    {rateTrend.changePct !== null && ` — ${signedPct(Math.round(rateTrend.changePct))} from earlier posts to recent ones.`}
+                  </>
+                )}
+                {rateTrend !== null && rateTrend.direction === "flat" && "Roughly flat — posting is steady but the rate isn't compounding yet."}
+                {rateTrend !== null && rateTrend.direction === "down" && (
+                  <>
+                    <strong style={{ color: "var(--color-danger)" }}>Trending down</strong>
+                    {rateTrend.changePct !== null && ` — ${signedPct(Math.round(rateTrend.changePct))} from earlier posts to recent ones.`}
+                  </>
+                )}
+              </div>
+            }
+          >
             <TrendLineChart points={ratePoints} ariaLabel="Engagement rate per post over time" formatValue={pct} formatAxisValue={pct} />
-            <div style={{ fontSize: 13, color: "var(--color-neutral-300)", marginTop: "var(--space-3)" }}>
-              {rateTrend === null && "Not enough measured posts yet to call a trend (need at least 4)."}
-              {rateTrend !== null && rateTrend.direction === "up" && (
-                <>
-                  <strong style={{ color: "var(--color-accent-300)" }}>Trending up</strong>
-                  {rateTrend.changePct !== null && ` — ${signedPct(Math.round(rateTrend.changePct))} from earlier posts to recent ones.`}
-                </>
-              )}
-              {rateTrend !== null && rateTrend.direction === "flat" && "Roughly flat — posting is steady but the rate isn't compounding yet."}
-              {rateTrend !== null && rateTrend.direction === "down" && (
-                <>
-                  <strong style={{ color: "var(--color-danger)" }}>Trending down</strong>
-                  {rateTrend.changePct !== null && ` — ${signedPct(Math.round(rateTrend.changePct))} from earlier posts to recent ones.`}
-                </>
-              )}
-            </div>
           </MetricCard>
         </div>
       </Section>
 
       <Section title="Is the scoring model any good?" subtitle="Should I trust Val's ranking, and which part of it actually works?">
         <div style={grid}>
-          <MetricCard title="Val's total score vs. actual results" empty={scoreVsResultRows.length === 0}>
+          <MetricCard
+            title="Val's total score vs. actual results"
+            empty={scoreVsResultRows.length === 0}
+            footer={
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: "var(--color-neutral-300)",
+                  padding: "var(--space-2) var(--space-3)",
+                  background: "var(--color-neutral-800)",
+                  borderRadius: "var(--radius-md)",
+                }}
+              >
+                {scoreCorrelation !== null ? `r = ${scoreCorrelation.toFixed(2)} — ` : ""}
+                {correlationLabel(scoreCorrelation, scoreVsResultRows.length)}
+              </div>
+            }
+          >
             <ScoreVsEngagementChart points={scoreVsResultRows} formatY={pct} />
-            <div
-              style={{
-                fontSize: 13,
-                fontWeight: 600,
-                color: "var(--color-neutral-300)",
-                marginTop: "var(--space-3)",
-                padding: "var(--space-2) var(--space-3)",
-                background: "var(--color-neutral-800)",
-                borderRadius: "var(--radius-md)",
-              }}
-            >
-              {scoreCorrelation !== null ? `r = ${scoreCorrelation.toFixed(2)} — ` : ""}
-              {correlationLabel(scoreCorrelation, scoreVsResultRows.length)}
-            </div>
           </MetricCard>
 
-          <MetricCard title="Which score dimension predicts it?" empty={dimensionCorrelations.every((d) => d.r === null)}>
+          <MetricCard
+            title="Which score dimension predicts it?"
+            empty={dimensionCorrelations.every((d) => d.r === null)}
+            footer={
+              strongestDimension && (
+                <div style={{ fontSize: 12, color: "var(--color-neutral-400)" }}>
+                  <strong style={{ color: "var(--color-accent-300)" }}>{strongestDimension.dimension}</strong> carries the strongest signal
+                  (r = {strongestDimension.r!.toFixed(2)}) — the total score's predictive power mostly comes from here.
+                </div>
+              )
+            }
+          >
             <DimensionCorrelationChart dimensions={dimensionCorrelations} />
-            {strongestDimension && (
-              <div style={{ fontSize: 12, color: "var(--color-neutral-400)", marginTop: "var(--space-3)" }}>
-                <strong style={{ color: "var(--color-accent-300)" }}>{strongestDimension.dimension}</strong> carries the strongest signal
-                (r = {strongestDimension.r!.toFixed(2)}) — the total score's predictive power mostly comes from here.
-              </div>
-            )}
           </MetricCard>
 
           <MetricCard title="Is Val's #1 pick actually chosen?" empty={pickAgreement.totalPosted === 0}>
@@ -405,7 +472,19 @@ export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; tod
             </div>
           </MetricCard>
 
-          <MetricCard title="When you override Val, does it pay off?" empty={overrideComparison.followedValCount === 0 && overrideComparison.overriddenCount === 0}>
+          <MetricCard
+            title="When you override Val, does it pay off?"
+            empty={overrideComparison.followedValCount === 0 && overrideComparison.overriddenCount === 0}
+            footer={
+              <div style={{ fontSize: 12, color: "var(--color-neutral-400)" }}>
+                {overrideDeltaPct === null
+                  ? "Need posts in both buckets with logged engagement to compare."
+                  : overrideDeltaPct >= 0
+                    ? <>Overrides run <strong style={{ color: "var(--color-accent-300)" }}>{signedPct(overrideDeltaPct)}</strong> vs. following Val — your instincts are beating the model.</>
+                    : <>Overrides run <strong style={{ color: "var(--color-danger)" }}>{signedPct(overrideDeltaPct)}</strong> vs. following Val — trusting the #1 pick tends to work better.</>}
+              </div>
+            }
+          >
             <BarComparisonChart
               bars={[
                 { label: "Followed Val's #1", value: overrideComparison.followedValAvgRate, count: overrideComparison.followedValCount },
@@ -414,36 +493,44 @@ export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; tod
               formatValue={pct}
               ariaLabel="Average engagement rate, followed Val's pick vs. overrode it"
             />
-            <div style={{ fontSize: 12, color: "var(--color-neutral-400)", marginTop: "var(--space-3)" }}>
-              {overrideDeltaPct === null
-                ? "Need posts in both buckets with logged engagement to compare."
-                : overrideDeltaPct >= 0
-                  ? <>Overrides run <strong style={{ color: "var(--color-accent-300)" }}>{signedPct(overrideDeltaPct)}</strong> vs. following Val — your instincts are beating the model.</>
-                  : <>Overrides run <strong style={{ color: "var(--color-danger)" }}>{signedPct(overrideDeltaPct)}</strong> vs. following Val — trusting the #1 pick tends to work better.</>}
-            </div>
           </MetricCard>
-        </div>
 
-        <div style={{ marginTop: "var(--space-4)" }}>
-          <MetricCard title="Is Val's scoring drifting over time?" empty={scoreDriftPoints.length === 0}>
+          <MetricCard
+            title="Is Val's scoring drifting over time?"
+            empty={scoreDriftPoints.length === 0}
+            footer={
+              <div style={{ fontSize: 13, color: "var(--color-neutral-300)" }}>
+                {scoreDriftTrend === null && "Not enough scored posts yet to call a trend (need at least 4)."}
+                {scoreDriftTrend !== null && scoreDriftTrend.direction === "up" && (
+                  <>Scores are creeping <strong style={{ color: "var(--color-danger)" }}>up</strong>{scoreDriftTrend.changePct !== null && ` (${signedPct(Math.round(scoreDriftTrend.changePct))})`} — watch for grade inflation if this isn't matched by real engagement gains above.</>
+                )}
+                {scoreDriftTrend !== null && scoreDriftTrend.direction === "flat" && "Scoring is stable — no meaningful drift up or down."}
+                {scoreDriftTrend !== null && scoreDriftTrend.direction === "down" && (
+                  <>Scores are drifting <strong>down</strong>{scoreDriftTrend.changePct !== null && ` (${signedPct(Math.round(scoreDriftTrend.changePct))})`} — Val is grading more harshly than before.</>
+                )}
+              </div>
+            }
+          >
             <TrendLineChart points={scoreDriftPoints} ariaLabel="Val's average total score per post over time" formatValue={(v) => `${v.toFixed(0)}/50`} />
-            <div style={{ fontSize: 13, color: "var(--color-neutral-300)", marginTop: "var(--space-3)" }}>
-              {scoreDriftTrend === null && "Not enough scored posts yet to call a trend (need at least 4)."}
-              {scoreDriftTrend !== null && scoreDriftTrend.direction === "up" && (
-                <>Scores are creeping <strong style={{ color: "var(--color-danger)" }}>up</strong>{scoreDriftTrend.changePct !== null && ` (${signedPct(Math.round(scoreDriftTrend.changePct))})`} — watch for grade inflation if this isn't matched by real engagement gains above.</>
-              )}
-              {scoreDriftTrend !== null && scoreDriftTrend.direction === "flat" && "Scoring is stable — no meaningful drift up or down."}
-              {scoreDriftTrend !== null && scoreDriftTrend.direction === "down" && (
-                <>Scores are drifting <strong>down</strong>{scoreDriftTrend.changePct !== null && ` (${signedPct(Math.round(scoreDriftTrend.changePct))})`} — Val is grading more harshly than before.</>
-              )}
-            </div>
           </MetricCard>
         </div>
       </Section>
 
       <Section title="Process health" subtitle="Is the day-to-day system itself working the way it should?">
         <div style={grid}>
-          <MetricCard title="Does a posting gap hurt the next post?" empty={gapComparison.backToBackCount === 0 && gapComparison.afterGapCount === 0}>
+          <MetricCard
+            title="Does a posting gap hurt the next post?"
+            empty={gapComparison.backToBackCount === 0 && gapComparison.afterGapCount === 0}
+            footer={
+              <div style={{ fontSize: 12, color: "var(--color-neutral-400)" }}>
+                {gapDeltaPct === null
+                  ? "Need posts in both buckets with logged engagement to compare."
+                  : gapDeltaPct < 0
+                    ? <>Posts after a gap run <strong style={{ color: "var(--color-danger)" }}>{signedPct(gapDeltaPct)}</strong> vs. back-to-back — consistency itself seems to matter.</>
+                    : <>Posts after a gap run <strong style={{ color: "var(--color-accent-300)" }}>{signedPct(gapDeltaPct)}</strong> vs. back-to-back — no real momentum penalty so far.</>}
+              </div>
+            }
+          >
             <BarComparisonChart
               bars={[
                 { label: "Back-to-back (≤1 day gap)", value: gapComparison.backToBackAvgRate, count: gapComparison.backToBackCount },
@@ -452,16 +539,19 @@ export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; tod
               formatValue={pct}
               ariaLabel="Average engagement rate, back-to-back posts vs. posts after a gap"
             />
-            <div style={{ fontSize: 12, color: "var(--color-neutral-400)", marginTop: "var(--space-3)" }}>
-              {gapDeltaPct === null
-                ? "Need posts in both buckets with logged engagement to compare."
-                : gapDeltaPct < 0
-                  ? <>Posts after a gap run <strong style={{ color: "var(--color-danger)" }}>{signedPct(gapDeltaPct)}</strong> vs. back-to-back — consistency itself seems to matter.</>
-                  : <>Posts after a gap run <strong style={{ color: "var(--color-accent-300)" }}>{signedPct(gapDeltaPct)}</strong> vs. back-to-back — no real momentum penalty so far.</>}
-            </div>
           </MetricCard>
 
-          <MetricCard title="Are posts actually starting conversations?" empty={totals.likes + totals.comments === 0}>
+          <MetricCard
+            title="Are posts actually starting conversations?"
+            empty={totals.likes + totals.comments === 0}
+            footer={
+              totals.likes + totals.comments > 0 && (
+                <div style={{ fontSize: 12, color: "var(--color-neutral-400)" }}>
+                  Every draft is designed to end with an open question — this is the number that tests whether that&apos;s actually working.
+                </div>
+              )
+            }
+          >
             <div style={{ display: "flex", alignItems: "baseline", gap: "var(--space-2)", marginBottom: "var(--space-3)" }}>
               <div className="stat-value">{pct(overallCommentRate)}</div>
               <div style={{ fontSize: 13, color: "var(--color-neutral-400)" }}>of impressions turn into a comment</div>
@@ -478,9 +568,6 @@ export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; tod
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "var(--color-neutral-400)", marginTop: "var(--space-2)" }}>
                   <span>{totals.likes} likes</span>
                   <span>{totals.comments} comments</span>
-                </div>
-                <div style={{ fontSize: 12, color: "var(--color-neutral-400)", marginTop: "var(--space-3)" }}>
-                  Every draft is designed to end with an open question — this is the number that tests whether that's actually working.
                 </div>
               </>
             )}
