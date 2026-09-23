@@ -1,4 +1,4 @@
-const TIMEZONE = process.env.PULSECRAFT_TIMEZONE || "UTC";
+const TIMEZONE = process.env.PULSECRAFT_TIMEZONE || "Asia/Kolkata";
 
 /** Today's date as YYYY-MM-DD in PULSECRAFT_TIMEZONE, e.g. for keying the daily Run. */
 export function todayInTimezone(timezone: string = TIMEZONE): string {
