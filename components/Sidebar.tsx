@@ -95,7 +95,7 @@ export default function Sidebar({
             flexShrink: 0,
           }}
         >
-          <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 15, letterSpacing: "-0.03em", color: "#fff" }}>
+          <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 20, letterSpacing: "-0.04em", color: "#fff" }}>
             in
           </span>
         </div>
