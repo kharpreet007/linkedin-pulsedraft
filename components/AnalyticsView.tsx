@@ -229,6 +229,8 @@ export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; tod
     (best, d) => (d.r !== null && (best === null || Math.abs(d.r) > Math.abs(best.r as number)) ? d : best),
     null
   );
+  const dimensionSampleSize = measured.filter((r) => r.score !== null).length;
+  const MIN_DIMENSION_SAMPLE = 5;
 
   // Is Val's #1 pick actually chosen, and when it isn't, does the override pay off?
   const pickAgreement = useMemo(() => computePickAgreement(postRows.map((r) => r.rank)), [postRows]);
@@ -458,12 +460,22 @@ export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; tod
             title="Which score dimension predicts it?"
             empty={dimensionCorrelations.every((d) => d.r === null)}
             footer={
-              strongestDimension && (
-                <div style={{ fontSize: 12, color: "var(--color-neutral-400)" }}>
-                  <strong style={{ color: "var(--color-accent-300)" }}>{strongestDimension.dimension}</strong> carries the strongest signal
-                  (r = {strongestDimension.r!.toFixed(2)}) — the total score's predictive power mostly comes from here.
-                </div>
-              )
+              <div style={{ fontSize: 12, color: "var(--color-neutral-400)" }}>
+                {dimensionSampleSize < MIN_DIMENSION_SAMPLE ? (
+                  <>
+                    Only {dimensionSampleSize} measured post{dimensionSampleSize === 1 ? "" : "s"} so far — need at least{" "}
+                    {MIN_DIMENSION_SAMPLE} before these correlations mean anything. Treat the chart as provisional.
+                  </>
+                ) : (
+                  strongestDimension && (
+                    <>
+                      <strong style={{ color: "var(--color-accent-300)" }}>{strongestDimension.dimension}</strong> carries the strongest
+                      signal (r = {strongestDimension.r!.toFixed(2)}, n = {dimensionSampleSize}) — the total score's predictive power
+                      mostly comes from here.
+                    </>
+                  )
+                )}
+              </div>
             }
           >
             <DimensionCorrelationChart dimensions={dimensionCorrelations} />
