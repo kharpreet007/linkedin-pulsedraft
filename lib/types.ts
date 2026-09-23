@@ -57,7 +57,7 @@ export interface RunDetail {
   } | null;
 }
 
-export type View = "dashboard" | "calendar" | "day" | "analytics" | "generator" | "postits";
+export type View = "dashboard" | "calendar" | "day" | "analytics" | "write" | "postits";
 
 export type AssignmentStatus = "Scheduled" | "Published";
 

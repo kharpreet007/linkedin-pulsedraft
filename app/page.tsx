@@ -6,7 +6,7 @@ import DashboardView from "@/components/DashboardView";
 import CalendarView from "@/components/CalendarView";
 import DayView from "@/components/DayView";
 import AnalyticsView from "@/components/AnalyticsView";
-import GeneratorView from "@/components/GeneratorView";
+import WriteAPostView from "@/components/WriteAPostView";
 import PostItsView from "@/components/PostItsView";
 import { CalendarSkeleton, DayViewSkeleton } from "@/components/Skeleton";
 import {
@@ -215,7 +215,9 @@ export default function Home() {
                 )
               ))}
             {view === "analytics" && <AnalyticsView runs={runs} today={today} />}
-            {view === "generator" && <GeneratorView />}
+            {view === "write" && (
+              <WriteAPostView today={today} onPosted={loadRuns} onGoToDashboard={() => setView("dashboard")} />
+            )}
             {view === "postits" && (
               <PostItsView
                 assignments={assignments}

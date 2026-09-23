@@ -1,7 +1,6 @@
 import { getGeminiClient, GEMINI_MODEL, generateContentWithRetry } from "@/lib/gemini";
 
-/** Same style rules as the original Post Generator prompt — kept in one place so the daily
- *  pipeline and the ad-hoc /api/generate endpoint never drift apart. */
+/** Draft-writing prompt for the Gemini-based daily pipeline (runDailyPipeline). */
 export function buildRemyPrompt(topic: string): string {
   return (
     'Write a LinkedIn post about this topic: "' +

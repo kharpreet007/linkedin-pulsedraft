@@ -48,11 +48,11 @@ export function updateEngagement(
   }).then((res) => json(res));
 }
 
-export function generateDraft(topic: string): Promise<{ draft: string }> {
-  return fetch("/api/generate", {
+export function writeOwnPost(date: string, draft: string): Promise<{ date: string; candidateId: string }> {
+  return fetch(`/api/runs/${date}/write`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ topic }),
+    body: JSON.stringify({ draft }),
   }).then((res) => json(res));
 }
 
