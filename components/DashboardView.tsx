@@ -80,7 +80,8 @@ function DashboardRow({
         <input
           className="input"
           type="text"
-          style={{ minWidth: 200 }}
+          title={topic}
+          style={{ width: "100%", minWidth: 200, textOverflow: "ellipsis" }}
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
           onBlur={() => onEditSelection(run.date, { topic })}
