@@ -21,6 +21,7 @@ import {
 } from "@/lib/api";
 import { fmtHeader } from "@/lib/format";
 import type { RunSummary, RunDetail, View, KanbanCategory, TopicAssignment } from "@/lib/types";
+import { KANBAN_CATEGORY_LABELS } from "@/lib/types";
 
 export default function Home() {
   const [view, setView] = useState<View>("calendar");
@@ -44,14 +45,36 @@ export default function Home() {
       .catch((e) => setErrorMsg(e instanceof Error ? e.message : "Could not load the topic calendar"));
   }, []);
 
-  useEffect(() => {
+  const refreshToday = useCallback(() => {
     fetch("/api/today")
       .then((r) => r.json())
       .then((d) => setToday(d.date))
       .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    refreshToday();
     loadRuns();
     loadAssignments();
-  }, [loadRuns, loadAssignments]);
+  }, [refreshToday, loadRuns, loadAssignments]);
+
+  // A tab left open overnight keeps yesterday's "today" until something re-checks it —
+  // re-sync whenever the tab regains focus so the date rolls over without a manual refresh.
+  useEffect(() => {
+    const onFocus = () => {
+      refreshToday();
+      loadRuns();
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") onFocus();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [refreshToday, loadRuns]);
 
   const selectDate = (date: string) => {
     setSelectedDate(date);
@@ -75,7 +98,7 @@ export default function Home() {
     }
   };
 
-  const handleEditSelection = async (date: string, patch: { topic?: string }) => {
+  const handleEditSelection = async (date: string, patch: { topic?: string; category?: KanbanCategory }) => {
     setRuns(
       (prev) =>
         prev?.map((r) =>
@@ -85,6 +108,9 @@ export default function Home() {
                 postedSelection: {
                   ...r.postedSelection,
                   ...(patch.topic !== undefined ? { topic: patch.topic } : {}),
+                  ...(patch.category !== undefined
+                    ? { category: KANBAN_CATEGORY_LABELS[patch.category], categoryKey: patch.category }
+                    : {}),
                 },
               }
             : r

@@ -28,8 +28,8 @@ export function publishCandidate(date: string, candidateId: string): Promise<{ c
 
 export function updateSelection(
   date: string,
-  patch: { topic?: string }
-): Promise<{ topicOverride: string | null; themeOverride: Theme | null }> {
+  patch: { topic?: string; category?: KanbanCategory }
+): Promise<{ topicOverride: string | null; themeOverride: Theme | null; categoryOverride: KanbanCategory | null }> {
   return fetch(`/api/runs/${date}/selection`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },

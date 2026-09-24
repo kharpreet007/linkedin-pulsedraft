@@ -82,17 +82,18 @@ model Score {
 }
 
 /// Which candidate was actually published for a given Run, plus any manual
-/// topic/theme edits made after the fact (kept separate from the AI-generated
+/// topic/theme/category edits made after the fact (kept separate from the AI-generated
 /// candidate fields so the original Scout/Remy/Val output is never overwritten).
 model PostedSelection {
-  id            String    @id @default(cuid())
-  runId         String    @unique
-  run           Run       @relation(fields: [runId], references: [id], onDelete: Cascade)
-  candidateId   String    @unique
-  candidate     Candidate @relation(fields: [candidateId], references: [id])
-  topicOverride String?
-  themeOverride Theme?
-  postedAt      DateTime  @default(now())
+  id              String          @id @default(cuid())
+  runId           String          @unique
+  run             Run             @relation(fields: [runId], references: [id], onDelete: Cascade)
+  candidateId     String          @unique
+  candidate       Candidate       @relation(fields: [candidateId], references: [id])
+  topicOverride   String?
+  themeOverride   Theme?
+  categoryOverride KanbanCategory?
+  postedAt        DateTime        @default(now())
 }
 
 /// Manually-entered LinkedIn metrics for a Run's published post (no LinkedIn API integration).

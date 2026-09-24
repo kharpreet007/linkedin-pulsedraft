@@ -23,7 +23,11 @@ export async function GET() {
         ? {
             candidateId: run.postedSelection.candidateId,
             topic: run.postedSelection.topicOverride ?? run.postedSelection.candidate.topic,
+            categoryKey: run.postedSelection.categoryOverride ?? run.postedSelection.candidate.category ?? null,
             category:
+              (run.postedSelection.categoryOverride
+                ? KANBAN_CATEGORY_LABELS[run.postedSelection.categoryOverride]
+                : null) ??
               run.postedSelection.themeOverride ??
               run.postedSelection.candidate.theme ??
               (run.postedSelection.candidate.category

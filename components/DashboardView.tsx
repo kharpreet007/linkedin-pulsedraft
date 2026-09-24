@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import type { RunSummary } from "@/lib/types";
+import type { KanbanCategory, RunSummary } from "@/lib/types";
+import { KANBAN_CATEGORY_LABELS } from "@/lib/types";
 import { fmtLabel } from "@/lib/format";
+
+const CATEGORY_OPTIONS = Object.keys(KANBAN_CATEGORY_LABELS) as KanbanCategory[];
 
 export default function DashboardView({
   runs,
@@ -12,7 +15,7 @@ export default function DashboardView({
 }: {
   runs: RunSummary[];
   today: string;
-  onEditSelection: (date: string, patch: { topic?: string }) => void;
+  onEditSelection: (date: string, patch: { topic?: string; category?: KanbanCategory }) => void;
   onEditEngagement: (date: string, patch: { impressions?: number; likes?: number; comments?: number }) => void;
 }) {
   const postedRuns = runs.filter((r) => r.postedSelection);
@@ -65,7 +68,7 @@ function DashboardRow({
 }: {
   run: RunSummary;
   today: string;
-  onEditSelection: (date: string, patch: { topic?: string }) => void;
+  onEditSelection: (date: string, patch: { topic?: string; category?: KanbanCategory }) => void;
   onEditEngagement: (date: string, patch: { impressions?: number; likes?: number; comments?: number }) => void;
 }) {
   const [topic, setTopic] = useState(run.postedSelection?.topic ?? "");
@@ -88,7 +91,19 @@ function DashboardRow({
         />
       </td>
       <td>
-        <span className="tag tag-neutral">{run.postedSelection?.category ?? "—"}</span>
+        <select
+          className="input"
+          style={{ minWidth: 150 }}
+          value={run.postedSelection?.categoryKey ?? ""}
+          onChange={(e) => onEditSelection(run.date, { category: e.target.value as KanbanCategory })}
+        >
+          {!run.postedSelection?.categoryKey && <option value="">—</option>}
+          {CATEGORY_OPTIONS.map((c) => (
+            <option key={c} value={c}>
+              {KANBAN_CATEGORY_LABELS[c]}
+            </option>
+          ))}
+        </select>
       </td>
       <td>
         <input

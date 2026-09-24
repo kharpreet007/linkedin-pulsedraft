@@ -8,6 +8,7 @@ export interface RunSummary {
     candidateId: string;
     topic: string;
     category: string;
+    categoryKey: KanbanCategory | null;
     grounded: boolean;
     score: CandidateScore | null;
     rank: number | null;
