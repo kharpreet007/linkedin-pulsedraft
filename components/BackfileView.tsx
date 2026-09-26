@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { BackfileEntry } from "@/lib/types";
-import { getBackfile } from "@/lib/api";
+import { getBackfile, deleteBackfilePost } from "@/lib/api";
 import { fmtHeader } from "@/lib/format";
 import { copyToClipboard } from "@/lib/clipboard";
 import { Skeleton } from "./Skeleton";
@@ -14,6 +14,8 @@ export default function BackfileView({ today }: { today: string }) {
   const [dateFilter, setDateFilter] = useState("");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [copiedDate, setCopiedDate] = useState<string | null>(null);
+  const [deletingDate, setDeletingDate] = useState<string | null>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     setEntries(null);
@@ -37,6 +39,20 @@ export default function BackfileView({ today }: { today: string }) {
     setTimeout(() => setCopiedDate((d) => (d === entry.date ? null : d)), 1600);
   };
 
+  const handleDelete = async (entry: BackfileEntry) => {
+    if (!window.confirm(`Delete the post for ${fmtHeader(entry.date, today)}? This can't be undone.`)) return;
+    setError("");
+    setDeletingDate(entry.date);
+    try {
+      await deleteBackfilePost(entry.date);
+      setEntries((prev) => prev?.filter((e) => e.date !== entry.date) ?? prev);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not delete that post. Try again.");
+    } finally {
+      setDeletingDate(null);
+    }
+  };
+
   return (
     <>
       <div>
@@ -56,6 +72,8 @@ export default function BackfileView({ today }: { today: string }) {
           Clear
         </button>
       </div>
+
+      {error && <div style={{ fontSize: 13, color: "var(--color-danger)", marginTop: "var(--space-3)" }}>{error}</div>}
 
       <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-3)", marginTop: "var(--space-4)" }}>
         {entries === null &&
@@ -99,9 +117,19 @@ export default function BackfileView({ today }: { today: string }) {
                   ) : (
                     <span />
                   )}
-                  <button className="btn btn-secondary" onClick={() => handleCopy(entry)} style={{ fontSize: 12, padding: "6px 12px" }}>
-                    {copiedDate === entry.date ? "Copied ✓" : "Copy"}
-                  </button>
+                  <div style={{ display: "flex", gap: "var(--space-2)" }}>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => handleDelete(entry)}
+                      disabled={deletingDate === entry.date}
+                      style={{ fontSize: 12, padding: "6px 12px", color: "var(--color-danger)", borderColor: "var(--color-danger)" }}
+                    >
+                      {deletingDate === entry.date ? "Deleting…" : "Delete"}
+                    </button>
+                    <button className="btn btn-secondary" onClick={() => handleCopy(entry)} style={{ fontSize: 12, padding: "6px 12px" }}>
+                      {copiedDate === entry.date ? "Copied ✓" : "Copy"}
+                    </button>
+                  </div>
                 </div>
               </div>
             );

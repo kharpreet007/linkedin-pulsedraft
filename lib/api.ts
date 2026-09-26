@@ -61,6 +61,10 @@ export function getBackfile(date?: string): Promise<BackfileEntry[]> {
   return fetch(`/api/backfile${query}`).then((res) => json<BackfileEntry[]>(res));
 }
 
+export function deleteBackfilePost(date: string): Promise<{ ok: boolean }> {
+  return fetch(`/api/runs/${date}/write`, { method: "DELETE" }).then((res) => json(res));
+}
+
 export function fetchAssignments(): Promise<TopicAssignment[]> {
   return fetch("/api/topic-assignments").then((res) => json<TopicAssignment[]>(res));
 }

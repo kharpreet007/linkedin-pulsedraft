@@ -45,3 +45,33 @@ export async function POST(req: NextRequest, { params }: { params: { date: strin
 
   return NextResponse.json({ date: run.date, candidateId: selection.candidateId });
 }
+
+/**
+ * Removes a hand-written post from Backfile. Refuses to touch a pipeline pick (a candidate with
+ * a Score) — this route only ever deletes what POST above creates. The PostedSelection must be
+ * deleted before the Candidate since nothing cascades that relation.
+ */
+export async function DELETE(_req: NextRequest, { params }: { params: { date: string } }) {
+  if (!isValidDateKey(params.date)) {
+    return NextResponse.json({ error: "Invalid date" }, { status: 400 });
+  }
+
+  const run = await prisma.run.findUnique({
+    where: { date: params.date },
+    include: { postedSelection: { include: { candidate: { include: { score: true } } } } },
+  });
+  if (!run || !run.postedSelection) {
+    return NextResponse.json({ error: "No post to delete for that date" }, { status: 404 });
+  }
+  if (run.postedSelection.candidate.score !== null) {
+    return NextResponse.json({ error: "That post wasn't hand-written — can't delete it from here" }, { status: 400 });
+  }
+
+  const candidateId = run.postedSelection.candidateId;
+  await prisma.$transaction([
+    prisma.postedSelection.delete({ where: { runId: run.id } }),
+    prisma.candidate.delete({ where: { id: candidateId } }),
+  ]);
+
+  return NextResponse.json({ ok: true });
+}
