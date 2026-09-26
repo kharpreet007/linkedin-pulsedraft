@@ -41,7 +41,7 @@ export default function BackfileView({ today }: { today: string }) {
     <>
       <div>
         <div className="page-title">Backfile</div>
-        <div className="page-subtitle">Every post you&apos;ve published, by date</div>
+        <div className="page-subtitle">Posts you've written yourself in Write a Post, by date</div>
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", marginTop: "var(--space-4)" }}>
@@ -81,10 +81,7 @@ export default function BackfileView({ today }: { today: string }) {
             return (
               <div key={entry.date} className="card">
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "var(--space-2)", flexWrap: "wrap" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
-                    <span className="tag tag-neutral">{entry.theme}</span>
-                    <span className="tag tag-outline">{entry.source === "pipeline" ? "Pipeline" : "Written"}</span>
-                  </div>
+                  <span className="tag tag-neutral">{entry.theme}</span>
                   <span style={{ fontSize: 12, color: "var(--color-neutral-400)" }}>{fmtHeader(entry.date, today)}</span>
                 </div>
 
@@ -111,7 +108,9 @@ export default function BackfileView({ today }: { today: string }) {
           })}
 
         {entries !== null && entries.length === 0 && (
-          <div className="empty-state">{dateFilter ? "No post published on this date." : "No published posts yet."}</div>
+          <div className="empty-state">
+            {dateFilter ? "No post written on this date." : "No hand-written posts yet — add one from Write a Post."}
+          </div>
         )}
       </div>
     </>

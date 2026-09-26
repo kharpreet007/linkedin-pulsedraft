@@ -6,10 +6,9 @@ import { isValidDateKey } from "@/lib/date";
 export const dynamic = "force-dynamic";
 
 /**
- * One entry per published post — whether it came from the Scout/Remy/Val pipeline (a Calendar
- * pick) or was hand-written via Write a Post — so every post you've ever published can be found
- * by date in one place. A hand-written post is identified the same way "grounded" is elsewhere
- * in this app: by the absence of a Score row, since Write a Post never creates one.
+ * One entry per post you wrote yourself via Write a Post — pipeline picks from the Calendar are
+ * deliberately excluded here. A hand-written post is identified the same way "grounded" is
+ * elsewhere in this app: by the absence of a Score row, since Write a Post never creates one.
  */
 export async function GET(req: NextRequest) {
   const date = req.nextUrl.searchParams.get("date");
@@ -19,12 +18,12 @@ export async function GET(req: NextRequest) {
 
   const runs = await prisma.run.findMany({
     where: {
-      postedSelection: { isNot: null },
+      postedSelection: { candidate: { score: null } },
       ...(date ? { date } : {}),
     },
     orderBy: { date: "desc" },
     include: {
-      postedSelection: { include: { candidate: { include: { score: true } } } },
+      postedSelection: { include: { candidate: true } },
     },
   });
 
@@ -43,7 +42,6 @@ export async function GET(req: NextRequest) {
           candidate.theme ??
           "—",
         text: candidate.draft,
-        source: candidate.score === null ? ("own" as const) : ("pipeline" as const),
       };
     });
 

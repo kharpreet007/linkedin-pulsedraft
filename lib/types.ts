@@ -97,5 +97,4 @@ export interface BackfileEntry {
   topic: string;
   theme: string;
   text: string;
-  source: "pipeline" | "own";
 }
