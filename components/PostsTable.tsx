@@ -7,9 +7,7 @@ import { fmtLabel } from "@/lib/format";
 
 const CATEGORY_OPTIONS = Object.keys(KANBAN_CATEGORY_LABELS) as KanbanCategory[];
 
-/** The editable Date/Topic/Category/Impressions/Likes/Comments table shared by the Dashboard
- *  (every posted run) and Backfill (just the ones you wrote yourself) — same columns, same
- *  inline-edit behavior, different filter on which runs get passed in. */
+/** The editable Date/Topic/Category/Impressions/Likes/Comments table used by the Dashboard. */
 export default function PostsTable({
   runs,
   today,

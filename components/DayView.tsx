@@ -4,32 +4,9 @@ import { useState } from "react";
 import type { Candidate, RunDetail } from "@/lib/types";
 import { KANBAN_CATEGORY_LABELS } from "@/lib/types";
 import { fmtHeader } from "@/lib/format";
+import { copyToClipboard } from "@/lib/clipboard";
 
 const VAL_PICK_EMAIL = "kharpreet007@gmail.com";
-
-function copyToClipboard(text: string) {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
-  } else {
-    fallbackCopy(text);
-  }
-}
-
-function fallbackCopy(text: string) {
-  const el = document.createElement("textarea");
-  el.value = text;
-  el.style.position = "fixed";
-  el.style.opacity = "0";
-  document.body.appendChild(el);
-  el.focus();
-  el.select();
-  try {
-    document.execCommand("copy");
-  } catch {
-    // clipboard unavailable — nothing more we can do
-  }
-  document.body.removeChild(el);
-}
 
 export default function DayView({
   run,

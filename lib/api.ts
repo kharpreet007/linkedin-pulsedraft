@@ -1,4 +1,4 @@
-import type { KanbanCategory, RunDetail, RunSummary, Theme, TopicAssignment } from "./types";
+import type { BackfileEntry, KanbanCategory, RunDetail, RunSummary, Theme, TopicAssignment } from "./types";
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -54,6 +54,11 @@ export function writeOwnPost(date: string, draft: string): Promise<{ date: strin
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ draft }),
   }).then((res) => json(res));
+}
+
+export function getBackfile(date?: string): Promise<BackfileEntry[]> {
+  const query = date ? `?date=${date}` : "";
+  return fetch(`/api/backfile${query}`).then((res) => json<BackfileEntry[]>(res));
 }
 
 export function fetchAssignments(): Promise<TopicAssignment[]> {

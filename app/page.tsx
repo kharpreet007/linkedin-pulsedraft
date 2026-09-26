@@ -7,7 +7,7 @@ import CalendarView from "@/components/CalendarView";
 import DayView from "@/components/DayView";
 import AnalyticsView from "@/components/AnalyticsView";
 import WriteAPostView from "@/components/WriteAPostView";
-import BackfillView from "@/components/BackfillView";
+import BackfileView from "@/components/BackfileView";
 import PostItsView from "@/components/PostItsView";
 import { CalendarSkeleton, DayViewSkeleton } from "@/components/Skeleton";
 import {
@@ -243,17 +243,14 @@ export default function Home() {
               ))}
             {view === "analytics" && <AnalyticsView runs={runs} today={today} />}
             {view === "write" && (
-              <WriteAPostView today={today} onPosted={loadRuns} onGoToDashboard={() => setView("dashboard")} />
-            )}
-            {view === "backfill" && (
-              <BackfillView
-                runs={runs}
+              <WriteAPostView
                 today={today}
                 onPosted={loadRuns}
-                onEditSelection={handleEditSelection}
-                onEditEngagement={handleEditEngagement}
+                onGoToDashboard={() => setView("dashboard")}
+                onGoToBackfile={() => setView("backfile")}
               />
             )}
+            {view === "backfile" && <BackfileView today={today} />}
             {view === "postits" && (
               <PostItsView
                 assignments={assignments}

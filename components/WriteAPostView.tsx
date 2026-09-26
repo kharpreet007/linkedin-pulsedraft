@@ -10,10 +10,12 @@ export default function WriteAPostView({
   today,
   onPosted,
   onGoToDashboard,
+  onGoToBackfile,
 }: {
   today: string;
   onPosted: () => void;
   onGoToDashboard: () => void;
+  onGoToBackfile: () => void;
 }) {
   const [date, setDate] = useState(today);
   const [draft, setDraft] = useState("");
@@ -68,9 +70,14 @@ export default function WriteAPostView({
             }}
           >
             <span>✓ Posted for {fmtHeader(postedFor, today)}.</span>
-            <button className="btn btn-secondary" onClick={onGoToDashboard} style={{ fontSize: 12, padding: "6px 12px" }}>
-              View on Dashboard
-            </button>
+            <div style={{ display: "flex", gap: "var(--space-2)" }}>
+              <button className="btn btn-secondary" onClick={onGoToDashboard} style={{ fontSize: 12, padding: "6px 12px" }}>
+                View on Dashboard
+              </button>
+              <button className="btn btn-secondary" onClick={onGoToBackfile} style={{ fontSize: 12, padding: "6px 12px" }}>
+                View in Backfile
+              </button>
+            </div>
           </div>
         )}
 

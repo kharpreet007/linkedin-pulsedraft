@@ -58,7 +58,7 @@ export interface RunDetail {
   } | null;
 }
 
-export type View = "dashboard" | "calendar" | "day" | "analytics" | "write" | "postits" | "backfill";
+export type View = "dashboard" | "calendar" | "day" | "analytics" | "write" | "postits" | "backfile";
 
 export type AssignmentStatus = "Scheduled" | "Published";
 
@@ -90,4 +90,12 @@ export interface TopicAssignment {
   date: string;
   status: AssignmentStatus;
   category: KanbanCategory;
+}
+
+export interface BackfileEntry {
+  date: string;
+  topic: string;
+  theme: string;
+  text: string;
+  source: "pipeline" | "own";
 }

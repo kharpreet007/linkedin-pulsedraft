@@ -50,7 +50,7 @@ const ICONS: Record<View, JSX.Element> = {
       <path d="M5.5 2v12M10.5 2v12" stroke="currentColor" strokeWidth="1.3" />
     </svg>
   ),
-  backfill: (
+  backfile: (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
       <rect x="1.5" y="4" width="13" height="10" rx="1.5" stroke="currentColor" strokeWidth="1.3" />
       <path d="M1.5 4l1.8-2h9.4l1.8 2" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
@@ -64,7 +64,7 @@ const NAV_ITEMS: { view: View; label: string }[] = [
   { view: "postits", label: "Post Its" },
   { view: "calendar", label: "Calendar" },
   { view: "write", label: "Write a Post" },
-  { view: "backfill", label: "Backfill" },
+  { view: "backfile", label: "Backfile" },
   { view: "analytics", label: "Analytics" },
 ];
 
