@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { KANBAN_CATEGORY_LABELS } from "@/lib/types";
+import { hourInTimezone } from "@/lib/date";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +47,7 @@ export async function GET() {
               : null,
             rank: run.postedSelection.candidate.rank,
             postedAt: run.postedSelection.postedAt.toISOString(),
+            postedHour: hourInTimezone(run.postedSelection.postedAt),
           }
         : null,
       engagement: run.engagement

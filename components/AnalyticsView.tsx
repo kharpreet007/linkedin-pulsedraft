@@ -17,6 +17,8 @@ import {
   computeDimensionCorrelations,
   computeOverrideComparison,
   computePostingGapEffect,
+  timeOfDayLabel,
+  orderByTimeOfDay,
 } from "@/lib/analytics";
 import ScoreVsEngagementChart from "./ScoreVsEngagementChart";
 import WeeklyPostRateChart from "./WeeklyPostRateChart";
@@ -137,6 +139,7 @@ export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; tod
         topic: r.postedSelection!.topic,
         category: r.postedSelection!.category,
         grounded: r.postedSelection!.grounded,
+        postedHour: r.postedSelection!.postedHour,
         rank: r.postedSelection!.rank,
         score: r.postedSelection!.score,
         impressions: r.engagement?.impressions ?? 0,
@@ -199,6 +202,11 @@ export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; tod
   const dowGroups = useMemo(() => orderByWeekday(groupByKey(postRows, (r) => weekdayName(r.date))), [postRows]);
   const bestDow = [...dowGroups].sort((a, b) => (b.avgRate ?? -1) - (a.avgRate ?? -1)).find((d) => d.avgRate !== null) ?? null;
   const worstDow = [...dowGroups].sort((a, b) => (a.avgRate ?? Infinity) - (b.avgRate ?? Infinity)).find((d) => d.avgRate !== null) ?? null;
+
+  // Q4b — is there a time-of-day effect?
+  const todGroups = useMemo(() => orderByTimeOfDay(groupByKey(postRows, (r) => timeOfDayLabel(r.postedHour))), [postRows]);
+  const bestTod = [...todGroups].sort((a, b) => (b.avgRate ?? -1) - (a.avgRate ?? -1)).find((d) => d.avgRate !== null) ?? null;
+  const worstTod = [...todGroups].sort((a, b) => (a.avgRate ?? Infinity) - (b.avgRate ?? Infinity)).find((d) => d.avgRate !== null) ?? null;
 
   // Val's total score vs. actual results, and which single dimension is doing the work
   const scoreVsResultRows = measured
@@ -407,6 +415,26 @@ export default function AnalyticsView({ runs, today }: { runs: RunSummary[]; tod
               bars={dowGroups.map((d) => ({ label: d.key, value: d.avgRate, count: d.count }))}
               formatValue={pct}
               ariaLabel="Average engagement rate by day of week"
+            />
+          </MetricCard>
+
+          <MetricCard
+            title="Is there a time-of-day effect?"
+            empty={todGroups.every((d) => d.count === 0)}
+            footer={
+              bestTod && (
+                <div style={{ fontSize: 12, color: "var(--color-neutral-400)" }}>
+                  <strong style={{ color: "var(--color-accent-300)" }}>{bestTod.key}</strong> leads at {pct(bestTod.avgRate)}
+                  {worstTod && worstTod.key !== bestTod.key && <> · {worstTod.key} trails at {pct(worstTod.avgRate)}</>}. Based on when
+                  you hit Publish/Post Draft — the closest proxy this app has to your actual LinkedIn posting time.
+                </div>
+              )
+            }
+          >
+            <BarComparisonChart
+              bars={todGroups.map((d) => ({ label: d.key, value: d.avgRate, count: d.count }))}
+              formatValue={pct}
+              ariaLabel="Average engagement rate by time of day"
             />
           </MetricCard>
 

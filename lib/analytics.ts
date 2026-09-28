@@ -155,6 +155,36 @@ export function orderByWeekday(groups: GroupStat[]): GroupStat[] {
   );
 }
 
+const TIME_OF_DAY_ORDER = [
+  "Early Morning (5–8am)",
+  "Morning (8am–12pm)",
+  "Afternoon (12–4pm)",
+  "Evening (4–8pm)",
+  "Night (8pm–12am)",
+  "Late Night (12–5am)",
+];
+
+/** Buckets an hour (0-23, already in the user's posting timezone — see hourInTimezone) into one
+ *  of six ~4-hour windows, for "what time of day should I post" without over-granularizing what's
+ *  usually a small sample of posts. */
+export function timeOfDayLabel(hour: number): string {
+  if (hour >= 5 && hour < 8) return TIME_OF_DAY_ORDER[0];
+  if (hour >= 8 && hour < 12) return TIME_OF_DAY_ORDER[1];
+  if (hour >= 12 && hour < 16) return TIME_OF_DAY_ORDER[2];
+  if (hour >= 16 && hour < 20) return TIME_OF_DAY_ORDER[3];
+  if (hour >= 20) return TIME_OF_DAY_ORDER[4];
+  return TIME_OF_DAY_ORDER[5];
+}
+
+/** Reorders a time-of-day GroupStat[] chronologically (any bucket groupByKey didn't see is filled
+ *  in as a zero-count placeholder so the chart always shows all 6 windows). */
+export function orderByTimeOfDay(groups: GroupStat[]): GroupStat[] {
+  const byKey = new Map(groups.map((g) => [g.key, g]));
+  return TIME_OF_DAY_ORDER.map(
+    (key) => byKey.get(key) ?? { key, count: 0, avgRate: null, avgImpressions: 0, avgLikes: 0, avgComments: 0 }
+  );
+}
+
 export interface DimensionCorrelation {
   dimension: string;
   r: number | null;

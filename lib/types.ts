@@ -13,6 +13,7 @@ export interface RunSummary {
     score: CandidateScore | null;
     rank: number | null;
     postedAt: string;
+    postedHour: number;
   } | null;
   engagement: {
     impressions: number;
