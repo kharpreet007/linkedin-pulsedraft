@@ -111,15 +111,21 @@ export default function Sidebar({
             flexShrink: 0,
           }}
         >
-          <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: 20, letterSpacing: "-0.04em", color: "#fff" }}>
-            in
-          </span>
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path
+              d="M1 9.5H4.5L6.5 4L10 15L12 9.5H17"
+              stroke="#fff"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </div>
         <div>
           <div style={{ fontFamily: "var(--font-heading)", fontWeight: 700, fontSize: 16, letterSpacing: "-0.01em", lineHeight: 1.2 }}>
-            LinkedIn Pulsedraft
+            Pulsedraft
           </div>
-          <div style={{ fontSize: 11, color: "var(--color-neutral-400)", marginTop: 1 }}>Draft Desk</div>
+          <div style={{ fontSize: 11, color: "var(--color-neutral-400)", marginTop: 1 }}>Content Automation for LinkedIn</div>
         </div>
       </div>
 

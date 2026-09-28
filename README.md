@@ -1,4 +1,4 @@
-# LinkedIn Pulsedraft — Draft Desk
+# Pulsedraft — Content Automation Tool for LinkedIn
 
 A daily content pipeline for LinkedIn posts. Once a day, three AI stages run automatically:
 
