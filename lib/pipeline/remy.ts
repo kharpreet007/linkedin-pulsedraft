@@ -1,26 +1,30 @@
 import { getGeminiClient, GEMINI_MODEL, generateContentWithRetry } from "@/lib/gemini";
 import { getVoice, type VoiceId } from "@/lib/voices";
+import { getStyle, type StyleId } from "@/lib/styles";
 
-/** Draft-writing prompt for the Gemini-based daily pipeline (runDailyPipeline). */
-export function buildRemyPrompt(topic: string, voiceId: VoiceId): string {
+/** Draft-writing prompt for the Gemini-based daily pipeline (runDailyPipeline). Voice controls tone
+ *  (who's "speaking" and how they open/close); Style controls structure (how the post is shaped) —
+ *  the two are independent dials, so any combination is valid even if some pair more naturally. */
+export function buildRemyPrompt(topic: string, voiceId: VoiceId, styleId: StyleId): string {
   const voice = getVoice(voiceId);
+  const style = getStyle(styleId);
   return (
     'Write a LinkedIn post about this topic: "' +
     topic +
     '". ' +
-    `Style rules, follow exactly: ${voice.instruction} ` +
-    "Format: short line-by-line format with one thought per line (each line on its own, separated by a newline), " +
-    "150-200 words total, no hashtags, no emojis. " +
+    `Voice rules, follow exactly: ${voice.instruction} ` +
+    `Structure rules, follow exactly: ${style.instruction} ` +
+    "Also: 150-200 words total, no hashtags, no emojis. " +
     "Output ONLY the post text, nothing else — no preamble, no quotes, no title."
   );
 }
 
-export async function runRemy(topic: string, voiceId: VoiceId): Promise<string> {
+export async function runRemy(topic: string, voiceId: VoiceId, styleId: StyleId): Promise<string> {
   const ai = getGeminiClient();
 
   const response = await generateContentWithRetry(ai, {
     model: GEMINI_MODEL,
-    contents: buildRemyPrompt(topic, voiceId),
+    contents: buildRemyPrompt(topic, voiceId, styleId),
   });
 
   const text = (response.text ?? "").trim();

@@ -4,9 +4,11 @@ import { runRemy } from "./remy";
 import { runVal } from "./val";
 import { getSetting } from "@/lib/settings";
 import { DEFAULT_VOICE, type VoiceId } from "@/lib/voices";
+import { DEFAULT_STYLE, type StyleId } from "@/lib/styles";
 import type { KanbanCategory, Theme } from "@prisma/client";
 
 const VOICE_SETTING_KEY = "pipeline_voice";
+const STYLE_SETTING_KEY = "pipeline_style";
 
 export interface DailyRunResult {
   date: string;
@@ -115,12 +117,13 @@ export async function runDailyPipeline(
 
   const topics = await runScout();
   const voice = ((await getSetting(VOICE_SETTING_KEY)) as VoiceId | null) ?? DEFAULT_VOICE;
+  const style = ((await getSetting(STYLE_SETTING_KEY)) as StyleId | null) ?? DEFAULT_STYLE;
   // Sequential, not Promise.all, with a gap between each: firing all 5 Remy calls back-to-back
   // spikes requests-per-minute enough to trip Gemini's rate limit on lower-tier API keys.
   const drafts: string[] = [];
   for (const t of topics) {
     await sleep(GEMINI_CALL_GAP_MS);
-    drafts.push(await runRemy(t.topic, voice));
+    drafts.push(await runRemy(t.topic, voice, style));
   }
 
   const scoreInputs = topics.map((t, index) => ({ index, topic: t.topic, draft: drafts[index] }));

@@ -1,5 +1,6 @@
 import type { BackfileEntry, KanbanCategory, RunDetail, RunSummary, Theme, TopicAssignment } from "./types";
 import type { VoiceId } from "./voices";
+import type { StyleId } from "./styles";
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -91,6 +92,18 @@ export function updateVoice(voice: VoiceId): Promise<{ voice: VoiceId }> {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ voice }),
+  }).then((res) => json(res));
+}
+
+export function fetchStyle(): Promise<{ style: StyleId }> {
+  return fetch("/api/settings/style").then((res) => json(res));
+}
+
+export function updateStyle(style: StyleId): Promise<{ style: StyleId }> {
+  return fetch("/api/settings/style", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ style }),
   }).then((res) => json(res));
 }
 
