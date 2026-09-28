@@ -1,4 +1,5 @@
 import type { BackfileEntry, KanbanCategory, RunDetail, RunSummary, Theme, TopicAssignment } from "./types";
+import type { VoiceId } from "./voices";
 
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) {
@@ -79,6 +80,18 @@ export function generateAssignments(items: { category: KanbanCategory; date: str
 
 export function deleteAssignment(id: string): Promise<{ ok: boolean }> {
   return fetch(`/api/topic-assignments/${id}`, { method: "DELETE" }).then((res) => json(res));
+}
+
+export function fetchVoice(): Promise<{ voice: VoiceId }> {
+  return fetch("/api/settings/voice").then((res) => json(res));
+}
+
+export function updateVoice(voice: VoiceId): Promise<{ voice: VoiceId }> {
+  return fetch("/api/settings/voice", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ voice }),
+  }).then((res) => json(res));
 }
 
 export function fetchBaselineRate(): Promise<{ postsPerWeek: number | null }> {

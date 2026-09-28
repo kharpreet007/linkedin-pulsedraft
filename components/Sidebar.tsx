@@ -57,6 +57,13 @@ const ICONS: Record<View, JSX.Element> = {
       <path d="M6.2 8h3.6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
     </svg>
   ),
+  voice: (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M8 1.5a2.5 2.5 0 0 0-2.5 2.5v4a2.5 2.5 0 0 0 5 0V4A2.5 2.5 0 0 0 8 1.5z" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M3.5 7.5v1a4.5 4.5 0 0 0 9 0v-1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+      <path d="M8 13v1.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  ),
 };
 
 const NAV_ITEMS: { view: View; label: string }[] = [
@@ -65,6 +72,7 @@ const NAV_ITEMS: { view: View; label: string }[] = [
   { view: "calendar", label: "Calendar" },
   { view: "write", label: "Write a Post" },
   { view: "backfile", label: "Backfile" },
+  { view: "voice", label: "Voice" },
   { view: "analytics", label: "Analytics" },
 ];
 

@@ -8,6 +8,7 @@ import DayView from "@/components/DayView";
 import AnalyticsView from "@/components/AnalyticsView";
 import WriteAPostView from "@/components/WriteAPostView";
 import BackfileView from "@/components/BackfileView";
+import VoiceSettingsView from "@/components/VoiceSettingsView";
 import PostItsView from "@/components/PostItsView";
 import { CalendarSkeleton, DayViewSkeleton } from "@/components/Skeleton";
 import {
@@ -251,6 +252,7 @@ export default function Home() {
               />
             )}
             {view === "backfile" && <BackfileView today={today} />}
+            {view === "voice" && <VoiceSettingsView />}
             {view === "postits" && (
               <PostItsView
                 assignments={assignments}
